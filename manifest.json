@@ -1,13 +1,12 @@
 {
-    "name": "Noticias JPII",
-    "short_name": "Noticias JPII",
+    "name": "Noticias App",
+    "short_name": "Noticias",
     "description": "App de noticias con notificaciones",
     "start_url": "/Noticias-EDU/",
     "scope": "/Noticias-EDU/",
     "display": "standalone",
     "background_color": "#667eea",
     "theme_color": "#667eea",
-    "orientation": "portrait",
     "icons": [
         {
             "src": "https://via.placeholder.com/192x192/667eea/ffffff?text=N",
