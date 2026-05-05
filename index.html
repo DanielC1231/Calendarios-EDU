@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Noticias App - Notificaciones Gratis</title>
-    <link rel="manifest" href="manifest.json">
+    <title>Noticias App - Notificaciones</title>
     <style>
         * {
             margin: 0;
@@ -197,12 +196,22 @@
         button {
             cursor: pointer;
         }
+        
+        .debug-info {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <header>
         <h1>Noticias App</h1>
-        <p>Recibe notificaciones de las ultimas noticias</p>
+        <p>Notificaciones automaticas de nuevas noticias</p>
         <button id="btn-activar" class="btn-notificaciones">Activar Notificaciones</button>
         <div id="estado-notif" class="estado"></div>
     </header>
@@ -220,6 +229,7 @@
         
         let noticiasAnteriores = [];
         let primeraCarga = true;
+        let notificacionesActivadas = false;
         
         function mostrarMensaje(texto, tipo) {
             const estadoDiv = document.getElementById('estado-notif');
@@ -239,10 +249,12 @@
                 btn.disabled = true;
                 btn.style.background = '#27ae60';
                 btn.style.cursor = 'default';
+                notificacionesActivadas = true;
             } else {
                 btn.textContent = 'Activar Notificaciones';
                 btn.disabled = false;
                 btn.style.background = '#667eea';
+                notificacionesActivadas = false;
             }
         }
         
@@ -274,45 +286,51 @@
             }
         }
         
-        function enviarNotificacion(titulo, cuerpo, icono = null) {
-            if (Notification.permission !== 'granted') {
+        function enviarNotificacion(titulo, cuerpo) {
+            if (!notificacionesActivadas && Notification.permission !== 'granted') {
+                console.log('Notificaciones no activadas');
                 return;
             }
             
-            const opciones = {
-                body: cuerpo,
-                icon: icono || 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
-                badge: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
-                vibrate: [200, 100, 200],
-                timestamp: new Date().getTime()
-            };
-            
-            const notificacion = new Notification(titulo, opciones);
-            
-            setTimeout(function() {
-                notificacion.close();
-            }, 5000);
-            
-            notificacion.onclick = function() {
-                window.focus();
-                this.close();
-            };
+            if (Notification.permission === 'granted') {
+                const opciones = {
+                    body: cuerpo,
+                    icon: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
+                    badge: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
+                    vibrate: [200, 100, 200],
+                    timestamp: new Date().getTime()
+                };
+                
+                const notificacion = new Notification(titulo, opciones);
+                
+                setTimeout(function() {
+                    notificacion.close();
+                }, 8000);
+                
+                notificacion.onclick = function() {
+                    window.focus();
+                    this.close();
+                };
+                
+                console.log('Notificacion enviada:', titulo);
+            }
         }
         
         function enviarNotificacionMultiple(nuevasNoticias) {
             if (!nuevasNoticias || nuevasNoticias.length === 0) return;
             
+            console.log('Enviando notificacion para', nuevasNoticias.length, 'noticias nuevas');
+            
             if (nuevasNoticias.length === 1) {
                 const noticia = nuevasNoticias[0];
-                enviarNotificacion(
-                    'Nueva Noticia',
-                    noticia.titulo + '\n' + (noticia.contenido.substring(0, 100) + (noticia.contenido.length > 100 ? '...' : ''))
-                );
+                const preview = noticia.contenido.length > 100 ? noticia.contenido.substring(0, 100) + '...' : noticia.contenido;
+                enviarNotificacion('Nueva Noticia: ' + noticia.titulo, preview);
             } else {
-                enviarNotificacion(
-                    nuevasNoticias.length + ' Noticias Nuevas',
-                    'Ultimas: ' + nuevasNoticias.slice(0, 3).map(function(n) { return n.titulo; }).join(', ') + (nuevasNoticias.length > 3 ? '...' : '')
-                );
+                const listaTitulos = nuevasNoticias.slice(0, 3).map(function(n) { 
+                    return n.titulo; 
+                }).join(', ');
+                const mensaje = nuevasNoticias.length + ' nuevas noticias: ' + listaTitulos + (nuevasNoticias.length > 3 ? '...' : '');
+                enviarNotificacion(nuevasNoticias.length + ' Noticias Nuevas', mensaje);
             }
         }
         
@@ -328,27 +346,38 @@
         
         function detectarNuevasNoticias(noticiasActuales) {
             if (primeraCarga || noticiasAnteriores.length === 0) {
+                console.log('Primera carga o sin noticias anteriores, no se detectan nuevas');
                 return [];
             }
             
-            const nuevasNoticias = [];
-            const setAnteriores = new Set();
+            console.log('Comparando noticias: anteriores=', noticiasAnteriores.length, 'actuales=', noticiasActuales.length);
             
+            const nuevasNoticias = [];
+            
+            // Crear set con identificadores unicos de noticias anteriores
+            const idsAnteriores = new Set();
             for (var i = 0; i < noticiasAnteriores.length; i++) {
                 var n = noticiasAnteriores[i];
-                setAnteriores.add(n.titulo + '|' + n.contenido.substring(0, 100));
+                var id = n.titulo + '|' + (n.contenido ? n.contenido.substring(0, 100) : '') + '|' + (n.fecha || '');
+                idsAnteriores.add(id);
             }
             
+            // Buscar noticias que no estaban antes
             for (var j = 0; j < noticiasActuales.length; j++) {
                 var noticia = noticiasActuales[j];
-                var clave = noticia.titulo + '|' + noticia.contenido.substring(0, 100);
-                if (!setAnteriores.has(clave)) {
+                var idActual = noticia.titulo + '|' + (noticia.contenido ? noticia.contenido.substring(0, 100) : '') + '|' + (noticia.fecha || '');
+                
+                if (!idsAnteriores.has(idActual)) {
+                    console.log('Noticia nueva detectada:', noticia.titulo);
                     nuevasNoticias.push(noticia);
                 }
             }
             
+            // Metodo alternativo: Si hay diferencia en cantidad
             if (nuevasNoticias.length === 0 && noticiasActuales.length > noticiasAnteriores.length) {
+                console.log('Detectando nuevas por diferencia de cantidad');
                 var diferencia = noticiasActuales.length - noticiasAnteriores.length;
+                
                 for (var k = 0; k < diferencia && k < noticiasActuales.length; k++) {
                     var posibleNueva = noticiasActuales[k];
                     var yaExiste = false;
@@ -362,6 +391,7 @@
                     }
                     
                     if (!yaExiste) {
+                        console.log('Noticia nueva detectada por cantidad:', posibleNueva.titulo);
                         nuevasNoticias.push(posibleNueva);
                     }
                 }
@@ -370,7 +400,7 @@
             return nuevasNoticias;
         }
         
-        function mostrarAlertaNuevasNoticias(cantidad) {
+        function mostrarAlertaVisual(cantidad) {
             var alertaExistente = document.querySelector('.alerta-nuevas-noticias');
             if (alertaExistente) {
                 alertaExistente.remove();
@@ -380,7 +410,7 @@
             alerta.className = 'alerta-nuevas-noticias';
             alerta.innerHTML = `
                 <div class="alerta-contenido">
-                    <span>🔔</span>
+                    <span>📰</span>
                     <span>` + cantidad + ` ` + (cantidad === 1 ? 'nueva noticia disponible' : 'nuevas noticias disponibles') + `</span>
                     <button onclick="this.parentElement.parentElement.remove()">✖</button>
                 </div>
@@ -397,10 +427,11 @@
         
         async function cargarNoticias() {
             try {
+                console.log('Cargando noticias desde API...');
                 const response = await fetch(API_URL);
                 
                 if (!response.ok) {
-                    throw new Error('Error en la respuesta de la API');
+                    throw new Error('Error HTTP: ' + response.status);
                 }
                 
                 const noticiasActuales = await response.json();
@@ -409,16 +440,29 @@
                     throw new Error('La API no devolvio un array');
                 }
                 
+                console.log('Noticias cargadas:', noticiasActuales.length);
+                
+                // Detectar nuevas noticias ANTES de actualizar la UI
                 const nuevasNoticias = detectarNuevasNoticias(noticiasActuales);
                 
+                // Si hay nuevas noticias Y las notificaciones estan activadas
                 if (nuevasNoticias.length > 0) {
-                    enviarNotificacionMultiple(nuevasNoticias);
-                    mostrarAlertaNuevasNoticias(nuevasNoticias.length);
+                    console.log('Nuevas noticias encontradas:', nuevasNoticias.length);
+                    
+                    if (notificacionesActivadas || Notification.permission === 'granted') {
+                        enviarNotificacionMultiple(nuevasNoticias);
+                    } else {
+                        console.log('Notificaciones no activadas, solo alerta visual');
+                    }
+                    
+                    mostrarAlertaVisual(nuevasNoticias.length);
                 }
                 
+                // Actualizar UI
                 const container = document.getElementById('noticias-container');
                 container.innerHTML = '';
                 
+                // Mostrar noticias (mas recientes primero)
                 const noticiasMostradas = noticiasActuales.slice().reverse();
                 
                 if (noticiasMostradas.length === 0) {
@@ -430,24 +474,27 @@
                         div.className = 'noticia';
                         
                         var imagenHtml = '';
-                        if (noticia.imagen) {
+                        if (noticia.imagen && noticia.imagen !== '') {
                             imagenHtml = '<img src="' + escapeHTML(noticia.imagen) + '" alt="' + escapeHTML(noticia.titulo) + '" class="noticia-img" onerror="this.style.display=\'none\'">';
                         }
                         
                         div.innerHTML = imagenHtml + `
                             <h2>` + escapeHTML(noticia.titulo) + `</h2>
                             <p>` + escapeHTML(noticia.contenido) + `</p>
-                            <small>` + escapeHTML(noticia.fecha) + `</small>
+                            <small>` + escapeHTML(noticia.fecha || 'Fecha no disponible') + `</small>
                         `;
                         container.appendChild(div);
                     }
                 }
                 
+                // Guardar estado actual para la proxima comparacion
                 noticiasAnteriores = JSON.parse(JSON.stringify(noticiasActuales));
                 primeraCarga = false;
                 
+                console.log('Noticias actualizadas. Total:', noticiasAnteriores.length);
+                
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error al cargar noticias:', error);
                 const container = document.getElementById('noticias-container');
                 container.innerHTML = `
                     <p class="error">
@@ -459,18 +506,24 @@
             }
         }
         
+        // Inicializar
         document.getElementById('btn-activar').addEventListener('click', activarNotificaciones);
         
+        // Verificar estado inicial de notificaciones
         if ('Notification' in window && Notification.permission === 'granted') {
+            notificacionesActivadas = true;
             actualizarUIEstado();
         }
         
+        // Iniciar carga de noticias
         cargarNoticias();
+        
+        // Verificar nuevas noticias cada 30 segundos
         setInterval(cargarNoticias, 30000);
+        
+        console.log('App iniciada - Verificando nuevas noticias cada 30 segundos');
     </script>
 </body>
-</html> visual
-        console.log('🚀 App de noticias iniciada - Monitoreando nuevas noticias cada 30 segundos');
-    </script>
+</html>
 </body>
 </html>
