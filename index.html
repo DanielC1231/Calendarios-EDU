@@ -24,7 +24,7 @@
 </head>
 <body>
     <header>
-        <h1>📰 Noticias App</h1>
+        <h1> Noticias App</h1>
         <p>Recibe notificaciones de las últimas noticias</p>
     </header>
     
@@ -39,35 +39,369 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
         
+        // Variables para almacenar noticias anteriores y control de notificación
+        let noticiasAnteriores = [];
+        let primeraCarga = true;
+        
+        // Función para enviar notificación de nueva noticia
+        async function enviarNotificacion(nuevaNoticia) {
+            try {
+                // Esperar a que OneSignal esté listo
+                await new Promise((resolve) => {
+                    if (window.OneSignalDeferred) {
+                        window.OneSignalDeferred.push(async (OneSignal) => {
+                            await OneSignal;
+                            resolve();
+                        });
+                    } else {
+                        resolve();
+                    }
+                });
+                
+                // Enviar notificación mediante OneSignal
+                if (window.OneSignal) {
+                    window.OneSignal.sendSelfNotification(
+                        `📢 ¡Nueva noticia!`,
+                        `${nuevaNoticia.titulo}\n${nuevaNoticia.contenido.substring(0, 100)}${nuevaNoticia.contenido.length > 100 ? '...' : ''}`,
+                        `${window.location.href}`,
+                        (completed) => {
+                            console.log('Notificación enviada');
+                        }
+                    );
+                } else {
+                    // Fallback con Notification API si OneSignal no está disponible
+                    if (Notification.permission === 'granted') {
+                        new Notification('📢 ¡Nueva noticia!', {
+                            body: `${nuevaNoticia.titulo}\n${nuevaNoticia.contenido.substring(0, 100)}`,
+                            icon: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png'
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error al enviar notificación:', error);
+            }
+        }
+        
+        // Función para enviar notificación de múltiples noticias nuevas
+        async function enviarNotificacionMultiple(nuevasNoticias) {
+            if (nuevasNoticias.length === 0) return;
+            
+            try {
+                await new Promise((resolve) => {
+                    if (window.OneSignalDeferred) {
+                        window.OneSignalDeferred.push(async (OneSignal) => {
+                            await OneSignal;
+                            resolve();
+                        });
+                    } else {
+                        resolve();
+                    }
+                });
+                
+                if (window.OneSignal) {
+                    if (nuevasNoticias.length === 1) {
+                        window.OneSignal.sendSelfNotification(
+                            `📢 ¡Nueva noticia!`,
+                            `${nuevasNoticias[0].titulo}\n${nuevasNoticias[0].contenido.substring(0, 100)}${nuevasNoticias[0].contenido.length > 100 ? '...' : ''}`,
+                            `${window.location.href}`
+                        );
+                    } else {
+                        window.OneSignal.sendSelfNotification(
+                            `📢 ¡${nuevasNoticias.length} noticias nuevas!`,
+                            `Las últimas: ${nuevasNoticias.map(n => n.titulo).join(', ')}`,
+                            `${window.location.href}`
+                        );
+                    }
+                } else if (Notification.permission === 'granted') {
+                    if (nuevasNoticias.length === 1) {
+                        new Notification('📢 ¡Nueva noticia!', {
+                            body: `${nuevasNoticias[0].titulo}\n${nuevasNoticias[0].contenido.substring(0, 100)}`,
+                            icon: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png'
+                        });
+                    } else {
+                        new Notification(`📢 ¡${nuevasNoticias.length} noticias nuevas!`, {
+                            body: `Las últimas: ${nuevasNoticias.map(n => n.titulo).join(', ')}`,
+                            icon: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png'
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error al enviar notificación múltiple:', error);
+            }
+        }
+        
+        // Función principal para cargar noticias
         async function cargarNoticias() {
             try {
                 const response = await fetch(API_URL);
-                const noticias = await response.json();
+                const noticiasActuales = await response.json();
                 
                 const container = document.getElementById('noticias-container');
                 container.innerHTML = '';
                 
-                noticias.reverse().forEach(noticia => {
+                // Invertir para mostrar más recientes primero
+                const noticiasMostradas = [...noticiasActuales].reverse();
+                
+                noticiasMostradas.forEach(noticia => {
                     const div = document.createElement('div');
                     div.className = 'noticia';
                     div.innerHTML = `
-                        ${noticia.imagen ? `<img src="${noticia.imagen}" alt="${noticia.titulo}" class="noticia-img">` : ''}
-                        <h2>${noticia.titulo}</h2>
-                        <p>${noticia.contenido}</p>
-                        <small>📅 ${noticia.fecha}</small>
+                        ${noticia.imagen ? `<img src="${noticia.imagen}" alt="${noticia.titulo}" class="noticia-img" loading="lazy" onerror="this.style.display='none'">` : ''}
+                        <h2>${escapeHTML(noticia.titulo)}</h2>
+                        <p>${escapeHTML(noticia.contenido)}</p>
+                        <small> ${escapeHTML(noticia.fecha)}</small>
                     `;
                     container.appendChild(div);
                 });
                 
+                // Si no es la primera carga, comparar para detectar nuevas noticias
+                if (!primeraCarga && noticiasAnteriores.length > 0) {
+                    // Método 1: Comparar por cantidad total
+                    if (noticiasActuales.length > noticiasAnteriores.length) {
+                        const cantidadNuevas = noticiasActuales.length - noticiasAnteriores.length;
+                        console.log(` Detectadas ${cantidadNuevas} noticia(s) nueva(s)`);
+                        
+                        // Método 2: Identificar cuáles son las nuevas noticias (comparando títulos y contenido)
+                        const nuevasNoticias = [];
+                        
+                        // Crear un conjunto con identificadores únicos de las noticias anteriores
+                        const idsAnteriores = new Set(
+                            noticiasAnteriores.map(n => `${n.titulo}|${n.contenido.substring(0, 50)}|${n.fecha}`)
+                        );
+                        
+                        // Encontrar noticias que no estaban antes (considerando desde la más reciente)
+                        for (let i = 0; i < noticiasActuales.length; i++) {
+                            const noticiaActual = noticiasActuales[i];
+                            const idActual = `${noticiaActual.titulo}|${noticiaActual.contenido.substring(0, 50)}|${noticiaActual.fecha}`;
+                            
+                            if (!idsAnteriores.has(idActual)) {
+                                nuevasNoticias.push(noticiaActual);
+                            }
+                        }
+                        
+                        // Si encontramos nuevas noticias por comparación detallada
+                        if (nuevasNoticias.length > 0) {
+                            console.log(` Nuevas noticias detectadas por contenido:`, nuevasNoticias.map(n => n.titulo));
+                            
+                            // Enviar notificación por la(s) noticia(s) nueva(s)
+                            await enviarNotificacionMultiple(nuevasNoticias);
+                            
+                            // Opcional: Mostrar un indicador visual de nuevas noticias
+                            mostrarToastNotificacion(nuevasNoticias.length);
+                        } 
+                        // Si no se detectaron por contenido pero hay diferencia en cantidad, enviar notificación genérica
+                        else if (cantidadNuevas > 0) {
+                            console.log(`📢 Enviando notificación por nueva(s) noticia(s) - Cantidad: ${cantidadNuevas}`);
+                            const noticiaMasReciente = noticiasActuales[0];
+                            await enviarNotificacion(noticiaMasReciente);
+                            mostrarToastNotificacion(cantidadNuevas);
+                        }
+                    }
+                }
+                
+                // Actualizar el almacenamiento de noticias anteriores
+                noticiasAnteriores = [...noticiasActuales];
+                primeraCarga = false;
+                
             } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('noticias-container').innerHTML = 
-                    '<p class="error">Error al cargar noticias. Intenta recargar.</p>';
+                console.error('Error al cargar noticias:', error);
+                const container = document.getElementById('noticias-container');
+                if (container.innerHTML === '' || container.innerHTML.includes('cargando')) {
+                    container.innerHTML = '<p class="error">❌ Error al cargar noticias. Verifica tu conexión e intenta recargar la página.</p>';
+                }
             }
         }
         
+        // Función para mostrar un toast/indicador visual de nuevas noticias
+        function mostrarToastNotificacion(cantidad) {
+            // Verificar si ya existe un toast
+            let toast = document.querySelector('.toast-notificacion');
+            if (toast) {
+                toast.remove();
+            }
+            
+            // Crear nuevo toast
+            toast = document.createElement('div');
+            toast.className = 'toast-notificacion';
+            toast.innerHTML = `
+                <div class="toast-contenido">
+                    <span class="toast-icono">🔔</span>
+                    <span class="toast-mensaje">${cantidad === 1 ? '¡Hay una nueva noticia!' : `¡Hay ${cantidad} noticias nuevas!`}</span>
+                    <button class="toast-cerrar">✖</button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Agregar estilos dinámicamente si no existen
+            if (!document.querySelector('#toast-styles')) {
+                const styles = document.createElement('style');
+                styles.id = 'toast-styles';
+                styles.textContent = `
+                    .toast-notificacion {
+                        position: fixed;
+                        bottom: 20px;
+                        right: 20px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 0;
+                        border-radius: 12px;
+                        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                        z-index: 1000;
+                        animation: slideInRight 0.3s ease-out;
+                        max-width: 350px;
+                        min-width: 250px;
+                    }
+                    
+                    .toast-contenido {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 12px 16px;
+                        gap: 12px;
+                    }
+                    
+                    .toast-icono {
+                        font-size: 24px;
+                        animation: campanita 0.5s ease-in-out;
+                    }
+                    
+                    .toast-mensaje {
+                        flex: 1;
+                        font-size: 14px;
+                        font-weight: 500;
+                    }
+                    
+                    .toast-cerrar {
+                        background: rgba(255,255,255,0.2);
+                        border: none;
+                        color: white;
+                        cursor: pointer;
+                        font-size: 16px;
+                        border-radius: 50%;
+                        width: 24px;
+                        height: 24px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: background 0.2s;
+                    }
+                    
+                    .toast-cerrar:hover {
+                        background: rgba(255,255,255,0.3);
+                    }
+                    
+                    @keyframes slideInRight {
+                        from {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        to {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    
+                    @keyframes campanita {
+                        0%, 100% { transform: rotate(0deg); }
+                        25% { transform: rotate(15deg); }
+                        75% { transform: rotate(-15deg); }
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .toast-notificacion {
+                            bottom: 10px;
+                            right: 10px;
+                            left: 10px;
+                            max-width: none;
+                        }
+                    }
+                `;
+                document.head.appendChild(styles);
+            }
+            
+            // Configurar cierre del toast
+            const cerrarBtn = toast.querySelector('.toast-cerrar');
+            cerrarBtn.addEventListener('click', () => {
+                toast.remove();
+            });
+            
+            // Auto-cerrar después de 5 segundos
+            setTimeout(() => {
+                if (toast && toast.parentNode) {
+                    toast.style.animation = 'slideOutRight 0.3s ease-out';
+                    setTimeout(() => {
+                        if (toast && toast.parentNode) toast.remove();
+                    }, 300);
+                }
+            }, 5000);
+            
+            // Agregar animación de salida
+            if (!document.querySelector('#toast-out-styles')) {
+                const outStyles = document.createElement('style');
+                outStyles.id = 'toast-out-styles';
+                outStyles.textContent = `
+                    @keyframes slideOutRight {
+                        from {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                        to {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(outStyles);
+            }
+        }
+        
+        // Función para escapar HTML y prevenir XSS
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        
+        // Solicitar permiso para notificaciones al cargar la página
+        async function solicitarPermisoNotificaciones() {
+            if ('Notification' in window) {
+                if (Notification.permission === 'default') {
+                    // Esperar un poco antes de solicitar permiso
+                    setTimeout(async () => {
+                        if (window.OneSignalDeferred) {
+                            window.OneSignalDeferred.push(async (OneSignal) => {
+                                await OneSignal;
+                                console.log(' OneSignal listo para notificaciones');
+                            });
+                        }
+                    }, 2000);
+                } else if (Notification.permission === 'granted') {
+                    console.log(' Permiso de notificaciones ya concedido');
+                }
+            }
+        }
+        
+        // Iniciar la carga de noticias y el monitoreo
         cargarNoticias();
-        setInterval(cargarNoticias, 300000);
+        
+        // Configurar intervalo para verificar nuevas noticias cada 30 segundos
+        const intervalo = setInterval(cargarNoticias, 30000);
+        
+        // Solicitar permiso de notificaciones
+        solicitarPermisoNotificaciones();
+        
+        // Limpiar intervalo si la página se descarga (opcional, pero buena práctica)
+        window.addEventListener('beforeunload', () => {
+            clearInterval(intervalo);
+        });
+        
+        // Opcional: Permitir recarga manual con indicador visual
+        console.log('🚀 App de noticias iniciada - Monitoreando nuevas noticias cada 30 segundos');
     </script>
 </body>
 </html>
