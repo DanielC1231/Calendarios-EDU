@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Noticias App - Notificaciones</title>
+    <link rel="manifest" href="manifest.json">
     <style>
         * {
             margin: 0;
@@ -238,7 +239,6 @@
         let primeraCarga = true;
         let notificacionesActivadas = false;
         
-        // Cargar noticias guardadas del localStorage al iniciar
         function cargarCacheLocal() {
             const guardadas = localStorage.getItem(STORAGE_KEY);
             const fechaGuardada = localStorage.getItem(STORAGE_FECHA_KEY);
@@ -247,7 +247,6 @@
                 try {
                     noticiasAnteriores = JSON.parse(guardadas);
                     console.log('Cache local cargado:', noticiasAnteriores.length, 'noticias');
-                    console.log('Ultima actualizacion cache:', fechaGuardada);
                     document.getElementById('cache-status').innerHTML = 'Cache: ' + noticiasAnteriores.length + ' noticias guardadas<br>Ultima sync: ' + (fechaGuardada || 'nunca');
                     
                     if (noticiasAnteriores.length > 0) {
@@ -263,7 +262,6 @@
             }
         }
         
-        // Guardar noticias en localStorage
         function guardarEnCache(noticias) {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(noticias));
@@ -327,76 +325,50 @@
                     return false;
                 }
             } else {
-                mostrarMensaje('Permiso de notificaciones bloqueado. Habilitelo desde la configuracion del navegador', 'error');
+                mostrarMensaje('Permiso bloqueado. Habilitelo desde configuracion del navegador', 'error');
                 return false;
             }
         }
         
-      function enviarNotificacion(titulo, cuerpo) {
-    if (!notificacionesActivadas && Notification.permission !== 'granted') {
-        console.log('Notificaciones no activadas');
-        return;
-    }
-    
-    if (Notification.permission === 'granted') {
-        // Verificar si hay un Service Worker activo (modo PWA/móvil)
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-            // Usar Service Worker para móvil/PWA
-            navigator.serviceWorker.ready.then(function(registration) {
-                registration.showNotification(titulo, {
-                    body: cuerpo,
-                    icon: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
-                    badge: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
-                    vibrate: [200, 100, 200],
-                    tag: 'nueva-noticia',
-                    requireInteraction: false
-                });
-            });
-        } else {
-            // Usar Notification API normal (PC sin SW)
-            const opciones = {
-                body: cuerpo,
-                icon: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
-                badge: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
-                vibrate: [200, 100, 200],
-                timestamp: new Date().getTime()
-            };
-            
-            const notificacion = new Notification(titulo, opciones);
-            
-            setTimeout(function() {
-                notificacion.close();
-            }, 8000);
-            
-            notificacion.onclick = function() {
-                window.focus();
-                this.close();
-            };
-        }
-        
-        console.log('Notificacion enviada:', titulo);
-    }
-}
+        // ✅ FUNCION CORREGIDA - Sin codigo duplicado
+        function enviarNotificacion(titulo, cuerpo) {
+            if (!notificacionesActivadas && Notification.permission !== 'granted') {
+                console.log('Notificaciones no activadas');
+                return;
+            }
             
             if (Notification.permission === 'granted') {
-                const opciones = {
-                    body: cuerpo,
-                    icon: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
-                    badge: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
-                    vibrate: [200, 100, 200],
-                    timestamp: new Date().getTime()
-                };
-                
-                const notificacion = new Notification(titulo, opciones);
-                
-                setTimeout(function() {
-                    notificacion.close();
-                }, 8000);
-                
-                notificacion.onclick = function() {
-                    window.focus();
-                    this.close();
-                };
+                // Móvil/PWA con Service Worker activo
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.ready.then(function(registration) {
+                        registration.showNotification(titulo, {
+                            body: cuerpo,
+                            icon: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
+                            badge: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
+                            vibrate: [200, 100, 200],
+                            tag: 'nueva-noticia'
+                        });
+                    });
+                } else {
+                    // PC sin Service Worker
+                    const opciones = {
+                        body: cuerpo,
+                        icon: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
+                        badge: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
+                        vibrate: [200, 100, 200]
+                    };
+                    
+                    const notificacion = new Notification(titulo, opciones);
+                    
+                    setTimeout(function() {
+                        notificacion.close();
+                    }, 8000);
+                    
+                    notificacion.onclick = function() {
+                        window.focus();
+                        this.close();
+                    };
+                }
                 
                 console.log('Notificacion enviada:', titulo);
             }
@@ -430,7 +402,6 @@
                 .replace(/'/g, '&#39;');
         }
         
-        // Generar ID unico para cada noticia
         function generarIdNoticia(noticia) {
             return noticia.titulo + '|' + (noticia.contenido ? noticia.contenido.substring(0, 100) : '') + '|' + (noticia.fecha || '');
         }
@@ -444,14 +415,12 @@
             console.log('Comparando noticias guardadas en cache:', noticiasAnteriores.length, 'vs actuales:', noticiasActuales.length);
             
             const nuevasNoticias = [];
-            
-            // Crear set con IDs de noticias anteriores (del cache)
             const idsAnteriores = new Set();
+            
             for (var i = 0; i < noticiasAnteriores.length; i++) {
                 idsAnteriores.add(generarIdNoticia(noticiasAnteriores[i]));
             }
             
-            // Buscar noticias que no estaban en cache
             for (var j = 0; j < noticiasActuales.length; j++) {
                 var noticia = noticiasActuales[j];
                 var idActual = generarIdNoticia(noticia);
@@ -462,7 +431,6 @@
                 }
             }
             
-            // Metodo alternativo por cantidad
             if (nuevasNoticias.length === 0 && noticiasActuales.length > noticiasAnteriores.length) {
                 console.log('Usando metodo alternativo por diferencia de cantidad');
                 var diferencia = noticiasActuales.length - noticiasAnteriores.length;
@@ -533,18 +501,15 @@
                 
                 console.log('Noticias actuales obtenidas:', noticiasActuales.length);
                 
-                // Verificar si hay noticias guardadas en cache
                 if (noticiasAnteriores.length === 0) {
                     console.log('ADVERTENCIA: No hay noticias en cache, intentando recuperar...');
-                    cargarCacheLocal(); // Intentar cargar de nuevo por si acaso
+                    cargarCacheLocal();
                 }
                 
                 console.log('Noticias en cache:', noticiasAnteriores.length);
                 
-                // Detectar nuevas noticias comparando con cache
                 const nuevasNoticias = detectarNuevasNoticias(noticiasActuales);
                 
-                // Si hay nuevas noticias
                 if (nuevasNoticias.length > 0) {
                     console.log('>>>> SE DETECTARON NUEVAS NOTICIAS:', nuevasNoticias.length);
                     console.log('Titulos:', nuevasNoticias.map(n => n.titulo));
@@ -589,7 +554,6 @@
                     }
                 }
                 
-                // GUARDAR EN CACHE LOCAL (esto persiste aunque cierres el navegador)
                 guardarEnCache(noticiasActuales);
                 noticiasAnteriores = JSON.parse(JSON.stringify(noticiasActuales));
                 
@@ -609,7 +573,6 @@
             }
         }
         
-        // LIMPIAR CACHE (util para debugging)
         window.limpiarCache = function() {
             localStorage.removeItem(STORAGE_KEY);
             localStorage.removeItem(STORAGE_FECHA_KEY);
@@ -621,22 +584,17 @@
             cargarNoticias(false);
         };
         
-        // Inicializar
         document.getElementById('btn-activar').addEventListener('click', activarNotificaciones);
         
-        // Cargar cache del localStorage al iniciar
         cargarCacheLocal();
         
-        // Verificar estado inicial de notificaciones
         if ('Notification' in window && Notification.permission === 'granted') {
             notificacionesActivadas = true;
             actualizarUIEstado();
         }
         
-        // Iniciar carga de noticias
         cargarNoticias(false);
         
-        // Verificar nuevas noticias cada 30 segundos
         setInterval(function() { cargarNoticias(true); }, 30000);
         
         console.log('App iniciada');
