@@ -12,7 +12,7 @@ Funcionalidades del Sistema
 
 🤝 Contribuciones
 ¡Las contribuciones son bienvenidas! Si tienes ideas para mejorar la pedagogía de las noticias o quieres optimizar el sistema de notificaciones, abre un Pull Request.
-
+Pagina:  https://danielc1231.github.io/Noticias-EDU/
 📲 Guía de Instalación (PWA)
 El SCIM está desarrollado como una Progressive Web App (PWA), lo que permite instalarla en dispositivos móviles sin pasar por una tienda oficial, garantizando un acceso directo y ligero.
 1. Android (Chrome)
