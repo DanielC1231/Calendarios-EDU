@@ -1,4 +1,4 @@
-const CACHE_NAME = 'noticias-edu-v1';
+const CACHE_NAME = 'calendarios-jpii-v1';
 const REPO_NAME = '/Noticias-EDU';
 
 const urlsToCache = [
