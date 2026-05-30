@@ -1,5 +1,5 @@
-const CACHE_NAME = 'calendarios-edu-v1';
-const REPO_NAME = '/Calendarios-EDU';
+const CACHE_NAME = 'horario-edu-v1';
+const REPO_NAME = '/Horario-EDU';
 
 const urlsToCache = [
     REPO_NAME + '/',
