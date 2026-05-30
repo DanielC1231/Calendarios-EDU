@@ -1,6 +1,6 @@
 📅 Horarios JPII
 
-Aplicación web progresiva (PWA) para consultar calendarios escolares del Instituto Juan Pablo II, organizados por semestre y grupo.
+Aplicación web progresiva (PWA) para consultar calendarios escolares dela Comunidad Educativa Juan Pablo II, organizados por semestre y grupo.
 
 🚀 Características
 
