@@ -1,7 +1,7 @@
 {
-    "name": "Noticias App",
-    "short_name": "Noticias",
-    "description": "App de noticias con notificaciones",
+    "name": "Calendarios JPII",
+    "short_name": "Calendarios",
+    "description": "Calendarios escolares por semestre y grupo",
     "start_url": "/Noticias-EDU/",
     "scope": "/Noticias-EDU/",
     "display": "standalone",
@@ -9,12 +9,12 @@
     "theme_color": "#667eea",
     "icons": [
         {
-            "src": "https://via.placeholder.com/192x192/667eea/ffffff?text=N",
+            "src": "https://cdn-icons-png.flaticon.com/512/3652/3652191.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "https://via.placeholder.com/512x512/667eea/ffffff?text=Noticias",
+            "src": "https://cdn-icons-png.flaticon.com/512/3652/3652191.png",
             "sizes": "512x512",
             "type": "image/png"
         }
