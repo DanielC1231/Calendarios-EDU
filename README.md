@@ -22,10 +22,4 @@ Aplicación web progresiva (PWA) para consultar calendarios escolares del Instit
 2. Toca "Agregar a pantalla de inicio"
 3. ¡Listo! Funciona como app nativa
 
-## 🔗 Enlace
-
-https://danielc1231.github.io/Noticias-EDU/
-
----
-
 Proyecto educativo colaborativo 2026
