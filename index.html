@@ -25,7 +25,7 @@
         
         h1 { font-size: 2em; margin-bottom: 10px; }
         
-        .btn-notificaciones {
+        .btn {
             background: white;
             color: #667eea;
             border: none;
@@ -33,13 +33,22 @@
             border-radius: 50px;
             font-size: 16px;
             cursor: pointer;
-            margin-top: 15px;
+            margin: 5px;
+            transition: all 0.3s;
         }
         
-        .btn-notificaciones:disabled {
+        .btn:hover { transform: scale(1.05); }
+        
+        .btn:disabled {
             background: #27ae60;
             color: white;
             cursor: default;
+            transform: none;
+        }
+        
+        .btn-recargar {
+            background: #667eea;
+            color: white;
         }
         
         .estado {
@@ -161,7 +170,8 @@
     <header>
         <h1>📅 Calendarios JPII</h1>
         <p>Calendarios escolares por semestre y grupo</p>
-        <button id="btn-activar" class="btn-notificaciones">Activar Notificaciones</button>
+        <button id="btn-activar" class="btn">Activar Notificaciones</button>
+        <button id="btn-recargar" class="btn btn-recargar">🔄 Recargar</button>
         <div id="estado-notif" class="estado"></div>
     </header>
     
@@ -183,7 +193,7 @@
         <p>2026 Calendarios JPII</p>
     </footer>
     
-    <div class="sync-status" id="sync">Cargando...</div>
+    <div class="sync-status" id="sync">Esperando...</div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
@@ -191,7 +201,6 @@
         
         let todosLosCalendarios = [];
         let filtroActual = 'todos';
-        let notificacionesActivadas = false;
         
         // ========== NOTIFICACIONES ==========
         function mostrarMensaje(texto, tipo) {
@@ -211,7 +220,6 @@
                 mostrarMensaje('Ya activadas', 'success');
                 document.getElementById('btn-activar').disabled = true;
                 document.getElementById('btn-activar').textContent = '✅ Activadas';
-                notificacionesActivadas = true;
                 return;
             }
             
@@ -220,7 +228,6 @@
                 mostrarMensaje('Notificaciones activadas', 'success');
                 document.getElementById('btn-activar').disabled = true;
                 document.getElementById('btn-activar').textContent = '✅ Activadas';
-                notificacionesActivadas = true;
             } else {
                 mostrarMensaje('Permiso denegado', 'error');
             }
@@ -296,6 +303,7 @@
         async function cargar() {
             try {
                 document.getElementById('sync').textContent = 'Cargando...';
+                document.getElementById('container').innerHTML = '<p class="cargando">Cargando calendarios...</p>';
                 
                 const response = await fetch(API_URL);
                 const data = await response.json();
@@ -305,61 +313,61 @@
                 // Guardar en localStorage
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 
-                // Solo renderizar si cambió algo
-                const dataStr = JSON.stringify(data);
-                const actualStr = JSON.stringify(todosLosCalendarios);
+                todosLosCalendarios = data;
+                renderizar();
+                document.getElementById('sync').textContent = '✓ Actualizado ' + new Date().toLocaleTimeString();
                 
-                if (dataStr !== actualStr) {
-                    todosLosCalendarios = data;
-                    renderizar();
-                    document.getElementById('sync').textContent = '✓ Actualizado ' + new Date().toLocaleTimeString();
-                } else {
-                    document.getElementById('sync').textContent = '✓ Sin cambios ' + new Date().toLocaleTimeString();
+                // Verificar si hay nuevos comparando con cache anterior
+                const anterior = localStorage.getItem(STORAGE_KEY + '_anterior');
+                if (anterior) {
+                    try {
+                        const anteriorData = JSON.parse(anterior);
+                        const dataStr = JSON.stringify(data);
+                        const antStr = JSON.stringify(anteriorData);
+                        
+                        if (dataStr !== antStr && Notification.permission === 'granted') {
+                            enviarNotificacion('📅 Calendarios actualizados', 'Hay nuevos calendarios disponibles');
+                        }
+                    } catch(e) {}
                 }
+                
+                // Guardar como anterior para la próxima comparación
+                localStorage.setItem(STORAGE_KEY + '_anterior', JSON.stringify(data));
                 
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('sync').textContent = '✗ Error: ' + error.message;
+                document.getElementById('sync').textContent = '✗ Error';
                 
-                // Intentar cargar del cache
+                // Cargar del cache si existe
                 const guardado = localStorage.getItem(STORAGE_KEY);
-                if (guardado && todosLosCalendarios.length === 0) {
+                if (guardado) {
                     try {
                         todosLosCalendarios = JSON.parse(guardado);
                         renderizar();
                         document.getElementById('sync').textContent = '✓ Cache local';
-                    } catch(e) {}
+                    } catch(e) {
+                        document.getElementById('container').innerHTML = '<p class="error">Error al cargar</p>';
+                    }
+                } else {
+                    document.getElementById('container').innerHTML = '<p class="error">Error al cargar</p>';
                 }
             }
         }
         
         // ========== INICIAR ==========
         document.getElementById('btn-activar').addEventListener('click', activarNotificaciones);
+        document.getElementById('btn-recargar').addEventListener('click', cargar);
         
         // Verificar estado notificaciones
         if ('Notification' in window && Notification.permission === 'granted') {
-            notificacionesActivadas = true;
             document.getElementById('btn-activar').disabled = true;
             document.getElementById('btn-activar').textContent = '✅ Activadas';
         }
         
-        // Cargar del cache primero
-        const cache = localStorage.getItem(STORAGE_KEY);
-        if (cache) {
-            try {
-                todosLosCalendarios = JSON.parse(cache);
-                renderizar();
-                document.getElementById('sync').textContent = '✓ Cache cargado';
-            } catch(e) {}
-        }
-        
-        // Cargar de la API
+        // Cargar al entrar a la página
         cargar();
         
-        // Solo verificar cada 2 minutos (no cada 30 segundos)
-        setInterval(cargar, 120000);
-        
-        console.log('App iniciada');
+        console.log('App iniciada - Carga manual');
     </script>
 </body>
 </html>
