@@ -26,5 +26,3 @@ https://danielc1231.github.io/Horario-EDU/
 ---
 
 Proyecto educativo colaborativo 2026
-
-Proyecto educativo colaborativo 2026
