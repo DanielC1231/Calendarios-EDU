@@ -38,26 +38,10 @@
         }
         
         .btn:hover { transform: scale(1.05); }
+        .btn:disabled { background: #27ae60; color: white; cursor: default; transform: none; }
+        .btn-recargar { background: #667eea; color: white; }
         
-        .btn:disabled {
-            background: #27ae60;
-            color: white;
-            cursor: default;
-            transform: none;
-        }
-        
-        .btn-recargar {
-            background: #667eea;
-            color: white;
-        }
-        
-        .estado {
-            margin-top: 10px;
-            padding: 8px;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        
+        .estado { margin-top: 10px; padding: 8px; border-radius: 8px; font-size: 14px; }
         .estado.success { background: #d4edda; color: #155724; }
         .estado.error { background: #f8d7da; color: #721c24; }
         
@@ -79,10 +63,7 @@
             font-size: 14px;
         }
         
-        .btn-filtro.activo {
-            background: #667eea;
-            color: white;
-        }
+        .btn-filtro.activo { background: #667eea; color: white; }
         
         .calendarios-grid {
             display: grid;
@@ -97,6 +78,12 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .calendario-img {
@@ -106,21 +93,9 @@
             background: #f8f9fa;
         }
         
-        .calendario-info {
-            padding: 15px;
-        }
-        
-        .calendario-info h2 {
-            color: #333;
-            font-size: 1.2em;
-            margin-bottom: 5px;
-        }
-        
-        .calendario-info .meta {
-            color: #666;
-            font-size: 0.9em;
-        }
-        
+        .calendario-info { padding: 15px; }
+        .calendario-info h2 { color: #333; font-size: 1.2em; margin-bottom: 5px; }
+        .calendario-info .meta { color: #666; font-size: 0.9em; }
         .calendario-info .badge {
             display: inline-block;
             background: #667eea;
@@ -201,6 +176,7 @@
         
         let todosLosCalendarios = [];
         let filtroActual = 'todos';
+        let yaRenderizado = false;
         
         // ========== NOTIFICACIONES ==========
         function mostrarMensaje(texto, tipo) {
@@ -238,10 +214,7 @@
             
             if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.ready.then(function(reg) {
-                    reg.showNotification(titulo, {
-                        body: cuerpo,
-                        icon: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png'
-                    });
+                    reg.showNotification(titulo, { body: cuerpo, icon: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png' });
                 });
             } else {
                 new Notification(titulo, { body: cuerpo, icon: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png' });
@@ -271,13 +244,22 @@
                 return;
             }
             
-            let html = '<div class="calendarios-grid">';
+            // ✅ SOLO crear el grid una vez, luego actualizar contenido
+            let grid = container.querySelector('.calendarios-grid');
             
+            if (!grid) {
+                // Primera vez: crear estructura
+                container.innerHTML = '<div class="calendarios-grid"></div>';
+                grid = container.querySelector('.calendarios-grid');
+            }
+            
+            // Generar HTML de las tarjetas
+            let html = '';
             filtrados.forEach(function(cal) {
                 const img = cal.imagen || 'https://via.placeholder.com/400x600/667eea/ffffff?text=Sin+Imagen';
                 html += 
                     '<div class="calendario-card">' +
-                        '<img src="' + esc(img) + '" alt="' + esc(cal.titulo) + '" class="calendario-img" onerror="this.src=\'https://via.placeholder.com/400x600/667eea/ffffff?text=Error\'">' +
+                        '<img src="' + esc(img) + '" alt="' + esc(cal.titulo) + '" class="calendario-img" loading="lazy" onerror="this.src=\'https://via.placeholder.com/400x600/667eea/ffffff?text=Error\'">' +
                         '<div class="calendario-info">' +
                             '<h2>' + esc(cal.titulo) + '</h2>' +
                             '<p class="meta">Grupo: ' + esc(cal.grupo || 'N/A') + ' | ' + esc(cal.fecha || 'N/A') + '</p>' +
@@ -286,8 +268,10 @@
                     '</div>';
             });
             
-            html += '</div>';
-            container.innerHTML = html;
+            // ✅ Solo actualizar si el HTML cambió
+            if (grid.innerHTML !== html) {
+                grid.innerHTML = html;
+            }
         }
         
         function esc(str) {
@@ -303,7 +287,11 @@
         async function cargar() {
             try {
                 document.getElementById('sync').textContent = 'Cargando...';
-                document.getElementById('container').innerHTML = '<p class="cargando">Cargando calendarios...</p>';
+                
+                // ✅ Solo mostrar "cargando" si no hay contenido previo
+                if (!yaRenderizado) {
+                    document.getElementById('container').innerHTML = '<p class="cargando">Cargando calendarios...</p>';
+                }
                 
                 const response = await fetch(API_URL);
                 const data = await response.json();
@@ -313,43 +301,43 @@
                 // Guardar en localStorage
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 
-                todosLosCalendarios = data;
-                renderizar();
-                document.getElementById('sync').textContent = '✓ Actualizado ' + new Date().toLocaleTimeString();
+                // Verificar si cambió
+                const dataStr = JSON.stringify(data);
+                const actualStr = JSON.stringify(todosLosCalendarios);
                 
-                // Verificar si hay nuevos comparando con cache anterior
-                const anterior = localStorage.getItem(STORAGE_KEY + '_anterior');
-                if (anterior) {
-                    try {
-                        const anteriorData = JSON.parse(anterior);
-                        const dataStr = JSON.stringify(data);
-                        const antStr = JSON.stringify(anteriorData);
-                        
-                        if (dataStr !== antStr && Notification.permission === 'granted') {
-                            enviarNotificacion('📅 Calendarios actualizados', 'Hay nuevos calendarios disponibles');
-                        }
-                    } catch(e) {}
+                if (dataStr !== actualStr) {
+                    todosLosCalendarios = data;
+                    renderizar();
+                    yaRenderizado = true;
+                    document.getElementById('sync').textContent = '✓ Actualizado ' + new Date().toLocaleTimeString();
+                    
+                    // Notificar si hay cambios y notificaciones activas
+                    if (actualStr !== '[]' && Notification.permission === 'granted') {
+                        enviarNotificacion('📅 Calendarios actualizados', 'Hay nuevos calendarios disponibles');
+                    }
+                } else {
+                    document.getElementById('sync').textContent = '✓ Sin cambios ' + new Date().toLocaleTimeString();
                 }
-                
-                // Guardar como anterior para la próxima comparación
-                localStorage.setItem(STORAGE_KEY + '_anterior', JSON.stringify(data));
                 
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('sync').textContent = '✗ Error';
                 
-                // Cargar del cache si existe
-                const guardado = localStorage.getItem(STORAGE_KEY);
-                if (guardado) {
-                    try {
-                        todosLosCalendarios = JSON.parse(guardado);
-                        renderizar();
-                        document.getElementById('sync').textContent = '✓ Cache local';
-                    } catch(e) {
+                // Cargar del cache si existe y no hay contenido
+                if (!yaRenderizado) {
+                    const guardado = localStorage.getItem(STORAGE_KEY);
+                    if (guardado) {
+                        try {
+                            todosLosCalendarios = JSON.parse(guardado);
+                            renderizar();
+                            yaRenderizado = true;
+                            document.getElementById('sync').textContent = '✓ Cache local';
+                        } catch(e) {
+                            document.getElementById('container').innerHTML = '<p class="error">Error al cargar</p>';
+                        }
+                    } else {
                         document.getElementById('container').innerHTML = '<p class="error">Error al cargar</p>';
                     }
-                } else {
-                    document.getElementById('container').innerHTML = '<p class="error">Error al cargar</p>';
                 }
             }
         }
@@ -364,10 +352,10 @@
             document.getElementById('btn-activar').textContent = '✅ Activadas';
         }
         
-        // Cargar al entrar a la página
+        // Cargar al entrar
         cargar();
         
-        console.log('App iniciada - Carga manual');
+        console.log('App iniciada');
     </script>
 </body>
 </html>
