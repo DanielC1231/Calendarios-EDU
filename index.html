@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Noticias App - Notificaciones</title>
+    <title>Calendarios JPII</title>
+    <link rel="manifest" href="manifest.json">
     <style>
         * {
             margin: 0;
@@ -12,7 +13,7 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f5f5;
             padding: 20px;
         }
@@ -32,25 +33,24 @@
         }
         
         .btn-notificaciones {
-            background: #667eea;
-            color: white;
+            background: white;
+            color: #667eea;
             border: none;
             padding: 12px 24px;
             border-radius: 50px;
             font-size: 16px;
             cursor: pointer;
-            margin: 15px auto 0;
-            display: inline-block;
+            margin-top: 15px;
             transition: all 0.3s;
         }
         
         .btn-notificaciones:hover {
-            background: #764ba2;
             transform: scale(1.05);
         }
         
         .btn-notificaciones:disabled {
             background: #27ae60;
+            color: white;
             cursor: default;
             transform: none;
         }
@@ -72,45 +72,86 @@
             color: #721c24;
         }
         
-        .noticia {
+        /* Filtros de semestre */
+        .filtros {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn-filtro {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn-filtro:hover, .btn-filtro.activo {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* Grid de calendarios */
+        .calendarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .calendario-card {
             background: white;
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
+            overflow: hidden;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             transition: transform 0.2s;
         }
         
-        .noticia:hover {
-            transform: translateY(-3px);
+        .calendario-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
         }
         
-        .noticia-img {
+        .calendario-img {
             width: 100%;
-            max-height: 300px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 15px;
+            height: 400px;
+            object-fit: contain;
+            background: #f8f9fa;
         }
         
-        .noticia h2 {
+        .calendario-info {
+            padding: 15px;
+        }
+        
+        .calendario-info h2 {
             color: #333;
-            margin-bottom: 10px;
-            font-size: 1.5em;
+            font-size: 1.2em;
+            margin-bottom: 5px;
         }
         
-        .noticia p {
+        .calendario-info .meta {
             color: #666;
-            line-height: 1.6;
-            margin-bottom: 10px;
-        }
-        
-        .noticia small {
-            color: #999;
             font-size: 0.9em;
         }
         
-        .cargando, .error {
+        .calendario-info .badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-top: 8px;
+        }
+        
+        .cargando, .error, .vacio {
             text-align: center;
             padding: 40px;
             font-size: 1.2em;
@@ -121,72 +162,11 @@
             color: #e74c3c;
         }
         
-        .alerta-nuevas-noticias {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            z-index: 1000;
-            animation: slideIn 0.3s ease-out;
-        }
-        
-        .alerta-contenido {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-        }
-        
-        .alerta-contenido button {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 18px;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .alerta-contenido button:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
         footer {
             text-align: center;
             padding: 20px;
             color: #999;
             margin-top: 30px;
-        }
-        
-        .badge-cache {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            background: #333;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 11px;
-            font-family: monospace;
-            z-index: 999;
         }
         
         @media (max-width: 768px) {
@@ -196,84 +176,69 @@
             header {
                 padding: 20px;
             }
-            .noticia {
-                padding: 15px;
+            .calendarios-grid {
+                grid-template-columns: 1fr;
             }
-            .alerta-nuevas-noticias {
-                top: 10px;
-                right: 10px;
-                left: 10px;
+            .calendario-img {
+                height: 300px;
             }
-        }
-        
-        button {
-            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>Noticias App</h1>
-        <p>Notificaciones automaticas de nuevas noticias</p>
+        <h1>📅 Calendarios JPII</h1>
+        <p>Calendarios escolares por semestre y grupo</p>
         <button id="btn-activar" class="btn-notificaciones">Activar Notificaciones</button>
         <div id="estado-notif" class="estado"></div>
     </header>
     
-    <main id="noticias-container">
-        <p class="cargando">Cargando noticias...</p>
+    <div class="filtros" id="filtros-semestre">
+        <button class="btn-filtro activo" onclick="filtrarSemestre('todos')">Todos</button>
+        <button class="btn-filtro" onclick="filtrarSemestre('1')">1er Semestre</button>
+        <button class="btn-filtro" onclick="filtrarSemestre('2')">2do Semestre</button>
+        <button class="btn-filtro" onclick="filtrarSemestre('3')">3er Semestre</button>
+        <button class="btn-filtro" onclick="filtrarSemestre('4')">4to Semestre</button>
+        <button class="btn-filtro" onclick="filtrarSemestre('5')">5to Semestre</button>
+        <button class="btn-filtro" onclick="filtrarSemestre('6')">6to Semestre</button>
+    </div>
+    
+    <main id="calendarios-container">
+        <p class="cargando">Cargando calendarios...</p>
     </main>
     
     <footer>
-        <p>2026 Noticias JPII - Proyecto Educativo</p>
+        <p>2026 Calendarios JPII - Proyecto Educativo</p>
     </footer>
-    
-    <div class="badge-cache" id="cache-status">Cache: Cargando...</div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
-        const STORAGE_KEY = 'noticias_guardadas';
-        const STORAGE_FECHA_KEY = 'noticias_ultima_actualizacion';
+        const STORAGE_KEY = 'calendarios_guardados';
+        const STORAGE_FECHA_KEY = 'calendarios_ultima_actualizacion';
         
-        let noticiasAnteriores = [];
-        let primeraCarga = true;
+        let calendariosAnteriores = [];
+        let calendariosActuales = [];
+        let semestreActivo = 'todos';
         let notificacionesActivadas = false;
         
-        // Cargar noticias guardadas del localStorage al iniciar
         function cargarCacheLocal() {
             const guardadas = localStorage.getItem(STORAGE_KEY);
-            const fechaGuardada = localStorage.getItem(STORAGE_FECHA_KEY);
-            
             if (guardadas) {
                 try {
-                    noticiasAnteriores = JSON.parse(guardadas);
-                    console.log('Cache local cargado:', noticiasAnteriores.length, 'noticias');
-                    console.log('Ultima actualizacion cache:', fechaGuardada);
-                    document.getElementById('cache-status').innerHTML = 'Cache: ' + noticiasAnteriores.length + ' noticias guardadas<br>Ultima sync: ' + (fechaGuardada || 'nunca');
-                    
-                    if (noticiasAnteriores.length > 0) {
-                        primeraCarga = false;
-                    }
+                    calendariosAnteriores = JSON.parse(guardadas);
+                    console.log('Cache cargado:', calendariosAnteriores.length, 'calendarios');
                 } catch(e) {
-                    console.error('Error al parsear cache:', e);
-                    noticiasAnteriores = [];
+                    console.error('Error cache:', e);
                 }
-            } else {
-                console.log('No hay cache local, primera carga');
-                document.getElementById('cache-status').innerHTML = 'Cache: Sin datos guardados';
             }
         }
         
-        // Guardar noticias en localStorage
-        function guardarEnCache(noticias) {
+        function guardarEnCache(calendarios) {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(noticias));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(calendarios));
                 localStorage.setItem(STORAGE_FECHA_KEY, new Date().toLocaleString());
-                console.log('Noticias guardadas en cache local:', noticias.length);
-                document.getElementById('cache-status').innerHTML = 'Cache: ' + noticias.length + ' noticias guardadas<br>Ultima sync: ' + new Date().toLocaleString();
-                return true;
             } catch(e) {
-                console.error('Error al guardar cache:', e);
-                return false;
+                console.error('Error guardando cache:', e);
             }
         }
         
@@ -281,7 +246,6 @@
             const estadoDiv = document.getElementById('estado-notif');
             estadoDiv.textContent = texto;
             estadoDiv.className = 'estado ' + tipo;
-            
             setTimeout(function() {
                 estadoDiv.textContent = '';
                 estadoDiv.className = 'estado';
@@ -291,98 +255,127 @@
         function actualizarUIEstado() {
             const btn = document.getElementById('btn-activar');
             if (Notification.permission === 'granted') {
-                btn.innerHTML = 'Notificaciones Activadas';
+                btn.innerHTML = '✅ Notificaciones Activadas';
                 btn.disabled = true;
-                btn.style.background = '#27ae60';
-                btn.style.cursor = 'default';
                 notificacionesActivadas = true;
-            } else {
-                btn.innerHTML = 'Activar Notificaciones';
-                btn.disabled = false;
-                btn.style.background = '#667eea';
-                notificacionesActivadas = false;
             }
         }
         
         async function activarNotificaciones() {
             if (!('Notification' in window)) {
                 mostrarMensaje('Tu navegador no soporta notificaciones', 'error');
-                return false;
+                return;
             }
             
             if (Notification.permission === 'granted') {
-                mostrarMensaje('Notificaciones ya estaban activadas', 'success');
+                mostrarMensaje('Notificaciones ya activadas', 'success');
                 actualizarUIEstado();
-                return true;
+                return;
             }
             
             if (Notification.permission !== 'denied') {
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
-                    mostrarMensaje('Notificaciones activadas correctamente', 'success');
+                    mostrarMensaje('Notificaciones activadas', 'success');
                     actualizarUIEstado();
-                    return true;
                 } else {
-                    mostrarMensaje('Permiso de notificaciones denegado', 'error');
-                    return false;
+                    mostrarMensaje('Permiso denegado', 'error');
                 }
             } else {
-                mostrarMensaje('Permiso de notificaciones bloqueado. Habilitelo desde la configuracion del navegador', 'error');
-                return false;
+                mostrarMensaje('Permiso bloqueado. Actívalo en configuración', 'error');
             }
         }
         
         function enviarNotificacion(titulo, cuerpo) {
-            if (!notificacionesActivadas && Notification.permission !== 'granted') {
-                console.log('Notificaciones no activadas');
-                return;
-            }
+            if (Notification.permission !== 'granted') return;
             
-            if (Notification.permission === 'granted') {
-                const opciones = {
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.ready.then(function(registration) {
+                    registration.showNotification(titulo, {
+                        body: cuerpo,
+                        icon: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png',
+                        badge: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png',
+                        vibrate: [200, 100, 200],
+                        tag: 'nuevo-calendario'
+                    });
+                });
+            } else {
+                new Notification(titulo, {
                     body: cuerpo,
-                    icon: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
-                    badge: 'https://cdn-icons-png.flaticon.com/512/9162/9162399.png',
-                    vibrate: [200, 100, 200],
-                    timestamp: new Date().getTime()
-                };
-                
-                const notificacion = new Notification(titulo, opciones);
-                
-                setTimeout(function() {
-                    notificacion.close();
-                }, 8000);
-                
-                notificacion.onclick = function() {
-                    window.focus();
-                    this.close();
-                };
-                
-                console.log('Notificacion enviada:', titulo);
+                    icon: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png'
+                });
             }
         }
         
-        function enviarNotificacionMultiple(nuevasNoticias) {
-            if (!nuevasNoticias || nuevasNoticias.length === 0) return;
+        function filtrarSemestre(semestre) {
+            semestreActivo = semestre;
             
-            console.log('Enviando notificacion para', nuevasNoticias.length, 'noticias nuevas');
+            // Actualizar botones
+            document.querySelectorAll('.btn-filtro').forEach(btn => {
+                btn.classList.remove('activo');
+            });
+            event.target.classList.add('activo');
             
-            if (nuevasNoticias.length === 1) {
-                const noticia = nuevasNoticias[0];
-                const preview = noticia.contenido.length > 100 ? noticia.contenido.substring(0, 100) + '...' : noticia.contenido;
-                enviarNotificacion('Nueva Noticia: ' + noticia.titulo, preview);
-            } else {
-                const listaTitulos = nuevasNoticias.slice(0, 3).map(function(n) { 
-                    return n.titulo; 
-                }).join(', ');
-                const mensaje = nuevasNoticias.length + ' nuevas noticias: ' + listaTitulos + (nuevasNoticias.length > 3 ? '...' : '');
-                enviarNotificacion(nuevasNoticias.length + ' Noticias Nuevas', mensaje);
+            mostrarCalendarios();
+        }
+        
+        function mostrarCalendarios() {
+            const container = document.getElementById('calendarios-container');
+            container.innerHTML = '';
+            
+            let filtrados = calendariosActuales;
+            if (semestreActivo !== 'todos') {
+                filtrados = calendariosActuales.filter(c => String(c.semestre) === semestreActivo);
             }
+            
+            if (filtrados.length === 0) {
+                container.innerHTML = '<p class="vacio">No hay calendarios para este semestre</p>';
+                return;
+            }
+            
+            const grid = document.createElement('div');
+            grid.className = 'calendarios-grid';
+            
+            filtrados.forEach(cal => {
+                const card = document.createElement('div');
+                card.className = 'calendario-card';
+                
+                const imgUrl = cal.imagen || 'https://via.placeholder.com/400x600/667eea/ffffff?text=Sin+Imagen';
+                
+                card.innerHTML = `
+                    <img src="${escapeHTML(imgUrl)}" alt="${escapeHTML(cal.titulo)}" class="calendario-img" onerror="this.src='https://via.placeholder.com/400x600/667eea/ffffff?text=Error+Imagen'">
+                    <div class="calendario-info">
+                        <h2>${escapeHTML(cal.titulo)}</h2>
+                        <p class="meta">Grupo: ${escapeHTML(cal.grupo || 'N/A')} | Fecha: ${escapeHTML(cal.fecha || 'N/A')}</p>
+                        <span class="badge">${escapeHTML(cal.semestre || '?')}° Semestre</span>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+            
+            container.appendChild(grid);
+        }
+        
+        function detectarNuevos(calendariosActuales) {
+            if (calendariosAnteriores.length === 0) return [];
+            
+            const idsAnteriores = new Set(calendariosAnteriores.map(c => c.titulo + '|' + c.imagen));
+            const nuevos = [];
+            
+            calendariosActuales.forEach(cal => {
+                const id = cal.titulo + '|' + cal.imagen;
+                if (!idsAnteriores.has(id)) {
+                    nuevos.push(cal);
+                }
+            });
+            
+            return nuevos;
         }
         
         function escapeHTML(str) {
             if (!str) return '';
-            return str
+            return String(str)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
@@ -390,217 +383,54 @@
                 .replace(/'/g, '&#39;');
         }
         
-        // Generar ID unico para cada noticia
-        function generarIdNoticia(noticia) {
-            return noticia.titulo + '|' + (noticia.contenido ? noticia.contenido.substring(0, 100) : '') + '|' + (noticia.fecha || '');
-        }
-        
-        function detectarNuevasNoticias(noticiasActuales) {
-            if (noticiasAnteriores.length === 0) {
-                console.log('No hay noticias anteriores en cache, es primera carga o cache vacio');
-                return [];
-            }
-            
-            console.log('Comparando noticias guardadas en cache:', noticiasAnteriores.length, 'vs actuales:', noticiasActuales.length);
-            
-            const nuevasNoticias = [];
-            
-            // Crear set con IDs de noticias anteriores (del cache)
-            const idsAnteriores = new Set();
-            for (var i = 0; i < noticiasAnteriores.length; i++) {
-                idsAnteriores.add(generarIdNoticia(noticiasAnteriores[i]));
-            }
-            
-            // Buscar noticias que no estaban en cache
-            for (var j = 0; j < noticiasActuales.length; j++) {
-                var noticia = noticiasActuales[j];
-                var idActual = generarIdNoticia(noticia);
-                
-                if (!idsAnteriores.has(idActual)) {
-                    console.log('Nueva noticia detectada por ID:', noticia.titulo);
-                    nuevasNoticias.push(noticia);
-                }
-            }
-            
-            // Metodo alternativo por cantidad
-            if (nuevasNoticias.length === 0 && noticiasActuales.length > noticiasAnteriores.length) {
-                console.log('Usando metodo alternativo por diferencia de cantidad');
-                var diferencia = noticiasActuales.length - noticiasAnteriores.length;
-                
-                for (var k = 0; k < diferencia && k < noticiasActuales.length; k++) {
-                    var posibleNueva = noticiasActuales[k];
-                    var yaExiste = false;
-                    
-                    for (var m = 0; m < noticiasAnteriores.length; m++) {
-                        if (noticiasAnteriores[m].titulo === posibleNueva.titulo && 
-                            noticiasAnteriores[m].contenido === posibleNueva.contenido) {
-                            yaExiste = true;
-                            break;
-                        }
-                    }
-                    
-                    if (!yaExiste) {
-                        console.log('Nueva noticia detectada por cantidad:', posibleNueva.titulo);
-                        nuevasNoticias.push(posibleNueva);
-                    }
-                }
-            }
-            
-            return nuevasNoticias;
-        }
-        
-        function mostrarAlertaVisual(cantidad) {
-            var alertaExistente = document.querySelector('.alerta-nuevas-noticias');
-            if (alertaExistente) {
-                alertaExistente.remove();
-            }
-            
-            var alerta = document.createElement('div');
-            alerta.className = 'alerta-nuevas-noticias';
-            alerta.innerHTML = `
-                <div class="alerta-contenido">
-                    <span>📰</span>
-                    <span>` + cantidad + ` ` + (cantidad === 1 ? 'nueva noticia disponible' : 'nuevas noticias disponibles') + `</span>
-                    <button onclick="this.parentElement.parentElement.remove()">✖</button>
-                </div>
-            `;
-            
-            document.body.appendChild(alerta);
-            
-            setTimeout(function() {
-                if (alerta && alerta.parentNode) {
-                    alerta.remove();
-                }
-            }, 5000);
-        }
-        
-        async function cargarNoticias(esIntervalo = false) {
+        async function cargarCalendarios(esIntervalo = false) {
             try {
-                console.log('========================================');
-                console.log('Cargando noticias desde API...', esIntervalo ? '(Intervalo programado)' : '(Manual o inicial)');
+                console.log('Cargando calendarios...');
                 
                 const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Error HTTP: ' + response.status);
                 
-                if (!response.ok) {
-                    throw new Error('Error HTTP: ' + response.status);
-                }
+                const data = await response.json();
+                if (!Array.isArray(data)) throw new Error('La API no devolvió un array');
                 
-                const noticiasActuales = await response.json();
+                console.log('Calendarios obtenidos:', data.length);
+                calendariosActuales = data;
                 
-                if (!Array.isArray(noticiasActuales)) {
-                    throw new Error('La API no devolvio un array');
-                }
-                
-                console.log('Noticias actuales obtenidas:', noticiasActuales.length);
-                
-                // Verificar si hay noticias guardadas en cache
-                if (noticiasAnteriores.length === 0) {
-                    console.log('ADVERTENCIA: No hay noticias en cache, intentando recuperar...');
-                    cargarCacheLocal(); // Intentar cargar de nuevo por si acaso
-                }
-                
-                console.log('Noticias en cache:', noticiasAnteriores.length);
-                
-                // Detectar nuevas noticias comparando con cache
-                const nuevasNoticias = detectarNuevasNoticias(noticiasActuales);
-                
-                // Si hay nuevas noticias
-                if (nuevasNoticias.length > 0) {
-                    console.log('>>>> SE DETECTARON NUEVAS NOTICIAS:', nuevasNoticias.length);
-                    console.log('Titulos:', nuevasNoticias.map(n => n.titulo));
-                    
-                    if (notificacionesActivadas || Notification.permission === 'granted') {
-                        enviarNotificacionMultiple(nuevasNoticias);
-                        console.log('Notificacion(es) enviada(s)');
-                    } else {
-                        console.log('Notificaciones no activadas, solo alerta visual');
-                    }
-                    
-                    mostrarAlertaVisual(nuevasNoticias.length);
-                } else {
-                    console.log('No hay noticias nuevas');
-                }
-                
-                // Actualizar UI
-                const container = document.getElementById('noticias-container');
-                container.innerHTML = '';
-                
-                const noticiasMostradas = noticiasActuales.slice().reverse();
-                
-                if (noticiasMostradas.length === 0) {
-                    container.innerHTML = '<p class="cargando">No hay noticias disponibles</p>';
-                } else {
-                    for (var i = 0; i < noticiasMostradas.length; i++) {
-                        var noticia = noticiasMostradas[i];
-                        var div = document.createElement('div');
-                        div.className = 'noticia';
-                        
-                        var imagenHtml = '';
-                        if (noticia.imagen && noticia.imagen !== '') {
-                            imagenHtml = '<img src="' + escapeHTML(noticia.imagen) + '" alt="' + escapeHTML(noticia.titulo) + '" class="noticia-img" onerror="this.style.display=\'none\'">';
-                        }
-                        
-                        div.innerHTML = imagenHtml + `
-                            <h2>` + escapeHTML(noticia.titulo) + `</h2>
-                            <p>` + escapeHTML(noticia.contenido) + `</p>
-                            <small>` + escapeHTML(noticia.fecha || 'Fecha no disponible') + `</small>
-                        `;
-                        container.appendChild(div);
+                // Detectar nuevos
+                const nuevos = detectarNuevos(data);
+                if (nuevos.length > 0 && !esIntervalo) {
+                    console.log('Nuevos calendarios:', nuevos.length);
+                    if (Notification.permission === 'granted') {
+                        nuevos.forEach(n => {
+                            enviarNotificacion('📅 Nuevo Calendario', n.titulo);
+                        });
                     }
                 }
                 
-                // GUARDAR EN CACHE LOCAL (esto persiste aunque cierres el navegador)
-                guardarEnCache(noticiasActuales);
-                noticiasAnteriores = JSON.parse(JSON.stringify(noticiasActuales));
-                
-                console.log('Cache actualizado con', noticiasAnteriores.length, 'noticias');
-                console.log('========================================');
+                mostrarCalendarios();
+                guardarEnCache(data);
+                calendariosAnteriores = JSON.parse(JSON.stringify(data));
                 
             } catch (error) {
-                console.error('ERROR al cargar noticias:', error);
-                const container = document.getElementById('noticias-container');
-                container.innerHTML = `
-                    <p class="error">
-                        Error al cargar noticias<br>
-                        <small>` + error.message + `</small><br>
-                        <button onclick="cargarNoticias(false)" style="margin-top:10px; padding:8px 16px; cursor:pointer;">Reintentar</button>
-                    </p>
-                `;
+                console.error('Error:', error);
+                document.getElementById('calendarios-container').innerHTML = 
+                    `<p class="error">Error al cargar calendarios<br><small>${error.message}</small><br><button onclick="cargarCalendarios(false)" style="margin-top:10px;padding:8px 16px;">Reintentar</button></p>`;
             }
         }
-        
-        // LIMPIAR CACHE (util para debugging)
-        window.limpiarCache = function() {
-            localStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(STORAGE_FECHA_KEY);
-            noticiasAnteriores = [];
-            primeraCarga = true;
-            console.log('Cache limpiada');
-            document.getElementById('cache-status').innerHTML = 'Cache: Limpiada';
-            mostrarMensaje('Cache de noticias limpiada', 'success');
-            cargarNoticias(false);
-        };
         
         // Inicializar
         document.getElementById('btn-activar').addEventListener('click', activarNotificaciones);
-        
-        // Cargar cache del localStorage al iniciar
         cargarCacheLocal();
         
-        // Verificar estado inicial de notificaciones
         if ('Notification' in window && Notification.permission === 'granted') {
             notificacionesActivadas = true;
             actualizarUIEstado();
         }
         
-        // Iniciar carga de noticias
-        cargarNoticias(false);
+        cargarCalendarios(false);
+        setInterval(function() { cargarCalendarios(true); }, 30000);
         
-        // Verificar nuevas noticias cada 30 segundos
-        setInterval(function() { cargarNoticias(true); }, 30000);
-        
-        console.log('App iniciada');
-        console.log('Para limpiar cache manualmente, escribe: limpiarCache() en la consola');
+        console.log('App Calendarios JPII iniciada');
     </script>
 </body>
 </html>
