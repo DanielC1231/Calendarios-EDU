@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendarios JPII</title>
+    <title>Horario JPII</title>
     <link rel="manifest" href="manifest.json">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -65,7 +65,7 @@
             color: white;
         }
         
-        .calendarios-grid {
+        .horarios-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
@@ -73,7 +73,7 @@
             margin: 0 auto;
         }
         
-        .calendario-card {
+        .horario-card {
             background: white;
             border-radius: 12px;
             overflow: hidden;
@@ -81,12 +81,12 @@
             transition: transform 0.2s;
         }
         
-        .calendario-card:hover {
+        .horario-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
         }
         
-        .calendario-img-container {
+        .horario-img-container {
             width: 100%;
             height: 400px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -99,7 +99,7 @@
             padding: 20px;
         }
         
-        .calendario-img {
+        .horario-img {
             width: 100%;
             height: 400px;
             object-fit: contain;
@@ -107,22 +107,22 @@
             display: block;
         }
         
-        .calendario-info {
+        .horario-info {
             padding: 15px;
         }
         
-        .calendario-info h2 {
+        .horario-info h2 {
             color: #333;
             font-size: 1.2em;
             margin-bottom: 5px;
         }
         
-        .calendario-info .meta {
+        .horario-info .meta {
             color: #666;
             font-size: 0.9em;
         }
         
-        .calendario-info .badge {
+        .horario-info .badge {
             display: inline-block;
             background: #667eea;
             color: white;
@@ -160,16 +160,16 @@
         
         @media (max-width: 768px) {
             body { padding: 10px; }
-            .calendarios-grid { grid-template-columns: 1fr; }
-            .calendario-img, .calendario-img-container { height: 300px; }
+            .horarios-grid { grid-template-columns: 1fr; }
+            .horario-img, .horario-img-container { height: 300px; }
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>📅 Calendarios JPII</h1>
-        <p>Calendarios escolares por semestre y grupo</p>
-        <button id="btn-recargar" class="btn-recargar">🔄 Actualizar calendarios</button>
+        <h1>📅 Horario JPII</h1>
+        <p>Horarios escolares por semestre y grupo</p>
+        <button id="btn-recargar" class="btn-recargar">🔄 Actualizar horarios</button>
     </header>
     
     <div class="filtros">
@@ -183,20 +183,20 @@
     </div>
     
     <main id="container">
-        <div class="calendarios-grid"></div>
+        <div class="horarios-grid"></div>
     </main>
     
     <footer>
-        <p>2026 Calendarios JPII - Proyecto Educativo</p>
+        <p>2026 Horario JPII - Proyecto Educativo</p>
     </footer>
     
     <div class="sync-status" id="sync">Esperando...</div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
-        const STORAGE_KEY = 'calendarios_cache';
+        const STORAGE_KEY = 'horarios_cache';
         
-        let todosLosCalendarios = [];
+        let todosLosHorarios = [];
         let filtroActual = 'todos';
         let yaRenderizado = false;
         let gridElement = null;
@@ -215,13 +215,13 @@
         function renderizar() {
             if (!gridElement) return;
             
-            let filtrados = todosLosCalendarios;
+            let filtrados = todosLosHorarios;
             if (filtroActual !== 'todos') {
-                filtrados = todosLosCalendarios.filter(c => String(c.semestre) === filtroActual);
+                filtrados = todosLosHorarios.filter(c => String(c.semestre) === filtroActual);
             }
             
             if (filtrados.length === 0) {
-                gridElement.innerHTML = '<div class="vacio">No hay calendarios para este semestre</div>';
+                gridElement.innerHTML = '<div class="vacio">No hay horarios para este semestre</div>';
                 return;
             }
             
@@ -231,15 +231,15 @@
                 let imgHtml;
                 
                 if (imgUrl && imgUrl.trim() !== '') {
-                    imgHtml = `<img src="${esc(imgUrl)}" alt="${esc(cal.titulo)}" class="calendario-img" onerror="this.parentElement.innerHTML='<div class=\'calendario-img-container\'><span>📅<br>${esc(cal.titulo)}</span></div>'">`;
+                    imgHtml = `<img src="${esc(imgUrl)}" alt="${esc(cal.titulo)}" class="horario-img" onerror="this.parentElement.innerHTML='<div class=\'horario-img-container\'><span>📅<br>${esc(cal.titulo)}</span></div>'">`;
                 } else {
-                    imgHtml = `<div class="calendario-img-container"><span>📅<br>${esc(cal.titulo)}</span></div>`;
+                    imgHtml = `<div class="horario-img-container"><span>📅<br>${esc(cal.titulo)}</span></div>`;
                 }
                 
                 html += `
-                    <div class="calendario-card">
+                    <div class="horario-card">
                         ${imgHtml}
-                        <div class="calendario-info">
+                        <div class="horario-info">
                             <h2>${esc(cal.titulo)}</h2>
                             <p class="meta">Grupo: ${esc(cal.grupo || 'N/A')} | Fecha: ${esc(cal.fecha || 'N/A')}</p>
                             <span class="badge">${esc(cal.semestre || '?')}° Semestre</span>
@@ -269,16 +269,16 @@
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 
                 // Verificar si realmente cambiaron los datos
-                const datosActualesStr = JSON.stringify(todosLosCalendarios);
+                const datosActualesStr = JSON.stringify(todosLosHorarios);
                 const nuevosDatosStr = JSON.stringify(data);
                 
                 if (datosActualesStr !== nuevosDatosStr) {
-                    todosLosCalendarios = data;
+                    todosLosHorarios = data;
                     renderizar();
                     yaRenderizado = true;
                     syncDiv.textContent = `✓ Actualizado ${new Date().toLocaleTimeString()}`;
                     if (mostrarFeedback) {
-                        mostrarToast('Calendarios actualizados');
+                        mostrarToast('Horarios actualizados');
                     }
                 } else {
                     syncDiv.textContent = `✓ Sin cambios ${new Date().toLocaleTimeString()}`;
@@ -300,15 +300,15 @@
                     const cache = localStorage.getItem(STORAGE_KEY);
                     if (cache) {
                         try {
-                            todosLosCalendarios = JSON.parse(cache);
+                            todosLosHorarios = JSON.parse(cache);
                             renderizar();
                             yaRenderizado = true;
                             document.getElementById('sync').textContent = '✓ Usando caché local';
                         } catch(e) {
-                            gridElement.innerHTML = '<div class="vacio">Error al cargar los calendarios</div>';
+                            gridElement.innerHTML = '<div class="vacio">Error al cargar los horarios</div>';
                         }
                     } else {
-                        gridElement.innerHTML = '<div class="vacio">No se pudieron cargar los calendarios</div>';
+                        gridElement.innerHTML = '<div class="vacio">No se pudieron cargar los horarios</div>';
                     }
                 }
             }
@@ -355,13 +355,13 @@
         
         // ========== INICIALIZACIÓN ==========
         function init() {
-            gridElement = document.querySelector('.calendarios-grid');
+            gridElement = document.querySelector('.horarios-grid');
             
             // Cargar desde cache primero (para mostrar algo rápido)
             const cache = localStorage.getItem(STORAGE_KEY);
             if (cache) {
                 try {
-                    todosLosCalendarios = JSON.parse(cache);
+                    todosLosHorarios = JSON.parse(cache);
                     renderizar();
                     yaRenderizado = true;
                     document.getElementById('sync').textContent = '✓ Caché local';
