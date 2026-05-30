@@ -5,7 +5,6 @@ Aplicación web progresiva (PWA) para consultar calendarios escolares del Instit
 ## 🚀 Características
 
 - 📱 Instalable en Android e iOS como app nativa
-- 🔔 Notificaciones push cuando hay nuevos calendarios
 - 📊 Filtros por semestre (1° al 6°)
 - 🖼️ Visualización de imágenes de calendarios
 - 💾 Funciona offline con caché local
