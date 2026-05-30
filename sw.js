@@ -43,6 +43,7 @@ self.addEventListener('fetch', function(event) {
     );
 });
 
+// Manejar notificaciones desde el Service Worker
 self.addEventListener('notificationclick', function(event) {
     event.notification.close();
     event.waitUntil(
