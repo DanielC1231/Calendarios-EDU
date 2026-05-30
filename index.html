@@ -72,7 +72,6 @@
             color: #721c24;
         }
         
-        /* Filtros de semestre */
         .filtros {
             display: flex;
             gap: 10px;
@@ -97,7 +96,6 @@
             color: white;
         }
         
-        /* Grid de calendarios */
         .calendarios-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -162,6 +160,24 @@
             color: #e74c3c;
         }
         
+        .alerta-nuevas {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
         footer {
             text-align: center;
             padding: 20px;
@@ -169,19 +185,24 @@
             margin-top: 30px;
         }
         
+        .badge-cache {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-family: monospace;
+            z-index: 999;
+        }
+        
         @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            header {
-                padding: 20px;
-            }
-            .calendarios-grid {
-                grid-template-columns: 1fr;
-            }
-            .calendario-img {
-                height: 300px;
-            }
+            body { padding: 10px; }
+            header { padding: 20px; }
+            .calendarios-grid { grid-template-columns: 1fr; }
+            .calendario-img { height: 300px; }
         }
     </style>
 </head>
@@ -194,13 +215,13 @@
     </header>
     
     <div class="filtros" id="filtros-semestre">
-        <button class="btn-filtro activo" onclick="filtrarSemestre('todos')">Todos</button>
-        <button class="btn-filtro" onclick="filtrarSemestre('1')">1er Semestre</button>
-        <button class="btn-filtro" onclick="filtrarSemestre('2')">2do Semestre</button>
-        <button class="btn-filtro" onclick="filtrarSemestre('3')">3er Semestre</button>
-        <button class="btn-filtro" onclick="filtrarSemestre('4')">4to Semestre</button>
-        <button class="btn-filtro" onclick="filtrarSemestre('5')">5to Semestre</button>
-        <button class="btn-filtro" onclick="filtrarSemestre('6')">6to Semestre</button>
+        <button class="btn-filtro activo" onclick="filtrarSemestre('todos', this)">Todos</button>
+        <button class="btn-filtro" onclick="filtrarSemestre('1', this)">1er Semestre</button>
+        <button class="btn-filtro" onclick="filtrarSemestre('2', this)">2do Semestre</button>
+        <button class="btn-filtro" onclick="filtrarSemestre('3', this)">3er Semestre</button>
+        <button class="btn-filtro" onclick="filtrarSemestre('4', this)">4to Semestre</button>
+        <button class="btn-filtro" onclick="filtrarSemestre('5', this)">5to Semestre</button>
+        <button class="btn-filtro" onclick="filtrarSemestre('6', this)">6to Semestre</button>
     </div>
     
     <main id="calendarios-container">
@@ -210,6 +231,8 @@
     <footer>
         <p>2026 Calendarios JPII - Proyecto Educativo</p>
     </footer>
+    
+    <div class="badge-cache" id="cache-status">Cache: Cargando...</div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
@@ -221,15 +244,28 @@
         let semestreActivo = 'todos';
         let notificacionesActivadas = false;
         
+        // ========== CACHE LOCAL ==========
         function cargarCacheLocal() {
             const guardadas = localStorage.getItem(STORAGE_KEY);
+            const fechaGuardada = localStorage.getItem(STORAGE_FECHA_KEY);
+            
             if (guardadas) {
                 try {
                     calendariosAnteriores = JSON.parse(guardadas);
                     console.log('Cache cargado:', calendariosAnteriores.length, 'calendarios');
+                    document.getElementById('cache-status').innerHTML = 
+                        'Cache: ' + calendariosAnteriores.length + ' calendarios<br>Ultima sync: ' + (fechaGuardada || 'nunca');
+                    
+                    if (calendariosAnteriores.length > 0) {
+                        mostrarCalendarios(calendariosAnteriores);
+                    }
                 } catch(e) {
                     console.error('Error cache:', e);
+                    calendariosAnteriores = [];
                 }
+            } else {
+                console.log('No hay cache local');
+                document.getElementById('cache-status').innerHTML = 'Cache: Sin datos';
             }
         }
         
@@ -237,11 +273,14 @@
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(calendarios));
                 localStorage.setItem(STORAGE_FECHA_KEY, new Date().toLocaleString());
+                document.getElementById('cache-status').innerHTML = 
+                    'Cache: ' + calendarios.length + ' calendarios<br>Ultima sync: ' + new Date().toLocaleString();
             } catch(e) {
                 console.error('Error guardando cache:', e);
             }
         }
         
+        // ========== NOTIFICACIONES ==========
         function mostrarMensaje(texto, tipo) {
             const estadoDiv = document.getElementById('estado-notif');
             estadoDiv.textContent = texto;
@@ -282,13 +321,15 @@
                     mostrarMensaje('Permiso denegado', 'error');
                 }
             } else {
-                mostrarMensaje('Permiso bloqueado. Actívalo en configuración', 'error');
+                mostrarMensaje('Permiso bloqueado. Activalo en configuracion', 'error');
             }
         }
         
+        // Notificacion usando Service Worker (movil) o Notification API (PC)
         function enviarNotificacion(titulo, cuerpo) {
             if (Notification.permission !== 'granted') return;
             
+            // Movil/PWA con Service Worker
             if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.ready.then(function(registration) {
                     registration.showNotification(titulo, {
@@ -300,6 +341,7 @@
                     });
                 });
             } else {
+                // PC sin Service Worker
                 new Notification(titulo, {
                     body: cuerpo,
                     icon: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png'
@@ -307,25 +349,65 @@
             }
         }
         
-        function filtrarSemestre(semestre) {
-            semestreActivo = semestre;
+        // ========== DETECTAR NUEVOS CALENDARIOS ==========
+        function detectarNuevos(actuales, anteriores) {
+            if (!anteriores || anteriores.length === 0) {
+                console.log('Primera carga, no hay anteriores para comparar');
+                return [];
+            }
             
-            // Actualizar botones
-            document.querySelectorAll('.btn-filtro').forEach(btn => {
-                btn.classList.remove('activo');
+            const idsAnteriores = new Set();
+            anteriores.forEach(function(c) {
+                idsAnteriores.add((c.semestre || '') + '|' + (c.grupo || '') + '|' + (c.titulo || ''));
             });
-            event.target.classList.add('activo');
             
-            mostrarCalendarios();
+            const nuevos = [];
+            actuales.forEach(function(c) {
+                const id = (c.semestre || '') + '|' + (c.grupo || '') + '|' + (c.titulo || '');
+                if (!idsAnteriores.has(id)) {
+                    console.log('Nuevo calendario detectado:', c.titulo);
+                    nuevos.push(c);
+                }
+            });
+            
+            return nuevos;
         }
         
-        function mostrarCalendarios() {
+        function mostrarAlertaVisual(cantidad) {
+            const alertaExistente = document.querySelector('.alerta-nuevas');
+            if (alertaExistente) alertaExistente.remove();
+            
+            const alerta = document.createElement('div');
+            alerta.className = 'alerta-nuevas';
+            alerta.innerHTML = '📅 ' + cantidad + ' nuevo(s) calendario(s) agregado(s)';
+            document.body.appendChild(alerta);
+            
+            setTimeout(function() {
+                if (alerta.parentNode) alerta.remove();
+            }, 5000);
+        }
+        
+        // ========== MOSTRAR CALENDARIOS ==========
+        function filtrarSemestre(semestre, btn) {
+            semestreActivo = semestre;
+            
+            document.querySelectorAll('.btn-filtro').forEach(function(b) {
+                b.classList.remove('activo');
+            });
+            btn.classList.add('activo');
+            
+            mostrarCalendarios(calendariosActuales);
+        }
+        
+        function mostrarCalendarios(calendarios) {
             const container = document.getElementById('calendarios-container');
             container.innerHTML = '';
             
-            let filtrados = calendariosActuales;
+            let filtrados = calendarios;
             if (semestreActivo !== 'todos') {
-                filtrados = calendariosActuales.filter(c => String(c.semestre) === semestreActivo);
+                filtrados = calendarios.filter(function(c) {
+                    return String(c.semestre) === semestreActivo;
+                });
             }
             
             if (filtrados.length === 0) {
@@ -336,41 +418,24 @@
             const grid = document.createElement('div');
             grid.className = 'calendarios-grid';
             
-            filtrados.forEach(cal => {
+            filtrados.forEach(function(cal) {
                 const card = document.createElement('div');
                 card.className = 'calendario-card';
                 
                 const imgUrl = cal.imagen || 'https://via.placeholder.com/400x600/667eea/ffffff?text=Sin+Imagen';
                 
-                card.innerHTML = `
-                    <img src="${escapeHTML(imgUrl)}" alt="${escapeHTML(cal.titulo)}" class="calendario-img" onerror="this.src='https://via.placeholder.com/400x600/667eea/ffffff?text=Error+Imagen'">
-                    <div class="calendario-info">
-                        <h2>${escapeHTML(cal.titulo)}</h2>
-                        <p class="meta">Grupo: ${escapeHTML(cal.grupo || 'N/A')} | Fecha: ${escapeHTML(cal.fecha || 'N/A')}</p>
-                        <span class="badge">${escapeHTML(cal.semestre || '?')}° Semestre</span>
-                    </div>
-                `;
+                card.innerHTML = 
+                    '<img src="' + escapeHTML(imgUrl) + '" alt="' + escapeHTML(cal.titulo) + '" class="calendario-img" onerror="this.src=\'https://via.placeholder.com/400x600/667eea/ffffff?text=Error+Imagen\'">' +
+                    '<div class="calendario-info">' +
+                        '<h2>' + escapeHTML(cal.titulo) + '</h2>' +
+                        '<p class="meta">Grupo: ' + escapeHTML(cal.grupo || 'N/A') + ' | Fecha: ' + escapeHTML(cal.fecha || 'N/A') + '</p>' +
+                        '<span class="badge">' + escapeHTML(cal.semestre || '?') + '° Semestre</span>' +
+                    '</div>';
                 
                 grid.appendChild(card);
             });
             
             container.appendChild(grid);
-        }
-        
-        function detectarNuevos(calendariosActuales) {
-            if (calendariosAnteriores.length === 0) return [];
-            
-            const idsAnteriores = new Set(calendariosAnteriores.map(c => c.titulo + '|' + c.imagen));
-            const nuevos = [];
-            
-            calendariosActuales.forEach(cal => {
-                const id = cal.titulo + '|' + cal.imagen;
-                if (!idsAnteriores.has(id)) {
-                    nuevos.push(cal);
-                }
-            });
-            
-            return nuevos;
         }
         
         function escapeHTML(str) {
@@ -383,43 +448,50 @@
                 .replace(/'/g, '&#39;');
         }
         
-        async function cargarCalendarios(esIntervalo = false) {
+        // ========== CARGAR DESDE API ==========
+        async function cargarCalendarios(esIntervalo) {
             try {
-                console.log('Cargando calendarios...');
+                console.log('Cargando calendarios...', esIntervalo ? '(auto)' : '(manual)');
                 
                 const response = await fetch(API_URL);
                 if (!response.ok) throw new Error('Error HTTP: ' + response.status);
                 
                 const data = await response.json();
-                if (!Array.isArray(data)) throw new Error('La API no devolvió un array');
+                if (!Array.isArray(data)) throw new Error('La API no devolvio un array');
                 
                 console.log('Calendarios obtenidos:', data.length);
                 calendariosActuales = data;
                 
-                // Detectar nuevos
-                const nuevos = detectarNuevos(data);
-                if (nuevos.length > 0 && !esIntervalo) {
-                    console.log('Nuevos calendarios:', nuevos.length);
-                    if (Notification.permission === 'granted') {
-                        nuevos.forEach(n => {
-                            enviarNotificacion('📅 Nuevo Calendario', n.titulo);
-                        });
+                // Comparar con anteriores para detectar nuevos
+                const nuevos = detectarNuevos(data, calendariosAnteriores);
+                
+                if (nuevos.length > 0 && esIntervalo) {
+                    console.log('Nuevos calendarios detectados:', nuevos.length);
+                    
+                    // Enviar notificacion
+                    if (nuevos.length === 1) {
+                        enviarNotificacion('📅 Nuevo Calendario', nuevos[0].titulo);
+                    } else {
+                        enviarNotificacion('📅 ' + nuevos.length + ' Calendarios Nuevos', 'Hay nuevos calendarios disponibles');
                     }
+                    
+                    mostrarAlertaVisual(nuevos.length);
                 }
                 
-                mostrarCalendarios();
+                mostrarCalendarios(data);
                 guardarEnCache(data);
                 calendariosAnteriores = JSON.parse(JSON.stringify(data));
                 
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('calendarios-container').innerHTML = 
-                    `<p class="error">Error al cargar calendarios<br><small>${error.message}</small><br><button onclick="cargarCalendarios(false)" style="margin-top:10px;padding:8px 16px;">Reintentar</button></p>`;
+                    '<p class="error">Error al cargar<br><small>' + error.message + '</small><br><button onclick="cargarCalendarios(false)" style="margin-top:10px;padding:8px 16px;">Reintentar</button></p>';
             }
         }
         
-        // Inicializar
+        // ========== INICIALIZAR ==========
         document.getElementById('btn-activar').addEventListener('click', activarNotificaciones);
+        
         cargarCacheLocal();
         
         if ('Notification' in window && Notification.permission === 'granted') {
@@ -427,8 +499,13 @@
             actualizarUIEstado();
         }
         
+        // Primera carga
         cargarCalendarios(false);
-        setInterval(function() { cargarCalendarios(true); }, 30000);
+        
+        // Verificar cada 30 segundos
+        setInterval(function() {
+            cargarCalendarios(true);
+        }, 30000);
         
         console.log('App Calendarios JPII iniciada');
     </script>
