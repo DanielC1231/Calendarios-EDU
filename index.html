@@ -6,11 +6,7 @@
     <title>Calendarios JPII</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -27,12 +23,9 @@
             text-align: center;
         }
         
-        h1 {
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
+        h1 { font-size: 2em; margin-bottom: 10px; }
         
-        .btn-recargar {
+        .btn {
             background: white;
             color: #667eea;
             border: none;
@@ -40,13 +33,17 @@
             border-radius: 50px;
             font-size: 16px;
             cursor: pointer;
-            margin-top: 15px;
-            transition: background 0.2s;
+            margin: 5px;
+            transition: all 0.3s;
         }
         
-        .btn-recargar:hover {
-            background: #f0f0f0;
-        }
+        .btn:hover { transform: scale(1.05); }
+        .btn:disabled { background: #27ae60; color: white; cursor: default; transform: none; }
+        .btn-recargar { background: #667eea; color: white; }
+        
+        .estado { margin-top: 10px; padding: 8px; border-radius: 8px; font-size: 14px; }
+        .estado.success { background: #d4edda; color: #155724; }
+        .estado.error { background: #f8d7da; color: #721c24; }
         
         .filtros {
             display: flex;
@@ -64,13 +61,9 @@
             border-radius: 25px;
             cursor: pointer;
             font-size: 14px;
-            transition: background 0.2s, color 0.2s;
         }
         
-        .btn-filtro.activo {
-            background: #667eea;
-            color: white;
-        }
+        .btn-filtro.activo { background: #667eea; color: white; }
         
         .calendarios-grid {
             display: grid;
@@ -87,9 +80,17 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
-        .calendario-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        .calendario-img-container {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+            text-align: center;
+            padding: 20px;
         }
         
         .calendario-img {
@@ -97,23 +98,12 @@
             height: 400px;
             object-fit: contain;
             background: #f8f9fa;
+            display: block;
         }
         
-        .calendario-info {
-            padding: 15px;
-        }
-        
-        .calendario-info h2 {
-            color: #333;
-            font-size: 1.2em;
-            margin-bottom: 5px;
-        }
-        
-        .calendario-info .meta {
-            color: #666;
-            font-size: 0.9em;
-        }
-        
+        .calendario-info { padding: 15px; }
+        .calendario-info h2 { color: #333; font-size: 1.2em; margin-bottom: 5px; }
+        .calendario-info .meta { color: #666; font-size: 0.9em; }
         .calendario-info .badge {
             display: inline-block;
             background: #667eea;
@@ -124,12 +114,14 @@
             margin-top: 8px;
         }
         
-        .vacio {
+        .cargando, .error, .vacio {
             text-align: center;
             padding: 40px;
             font-size: 1.2em;
             color: #666;
         }
+        
+        .error { color: #e74c3c; }
         
         footer {
             text-align: center;
@@ -138,29 +130,22 @@
             margin-top: 30px;
         }
         
-        .toast {
+        .sync-status {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #2e7d32;
+            top: 10px;
+            right: 10px;
+            background: #333;
             color: white;
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-size: 0.85rem;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.2s;
-            pointer-events: none;
-        }
-        
-        .toast.show {
-            opacity: 1;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            z-index: 999;
         }
         
         @media (max-width: 768px) {
             body { padding: 10px; }
             .calendarios-grid { grid-template-columns: 1fr; }
-            .calendario-img { height: 300px; }
+            .calendario-img, .calendario-img-container { height: 300px; }
         }
     </style>
 </head>
@@ -168,38 +153,143 @@
     <header>
         <h1>📅 Calendarios JPII</h1>
         <p>Calendarios escolares por semestre y grupo</p>
-        <button id="btn-recargar" class="btn-recargar">🔄 Actualizar calendarios</button>
+        <button id="btn-activar" class="btn">Activar Notificaciones</button>
+        <button id="btn-recargar" class="btn btn-recargar">🔄 Recargar</button>
+        <div id="estado-notif" class="estado"></div>
     </header>
     
-    <div class="filtros" id="filtros">
-        <button class="btn-filtro activo" data-semestre="todos">Todos</button>
-        <button class="btn-filtro" data-semestre="1">1er Semestre</button>
-        <button class="btn-filtro" data-semestre="2">2do Semestre</button>
-        <button class="btn-filtro" data-semestre="3">3er Semestre</button>
-        <button class="btn-filtro" data-semestre="4">4to Semestre</button>
-        <button class="btn-filtro" data-semestre="5">5to Semestre</button>
-        <button class="btn-filtro" data-semestre="6">6to Semestre</button>
+    <div class="filtros">
+        <button class="btn-filtro activo" onclick="filtrar('todos', this)">Todos</button>
+        <button class="btn-filtro" onclick="filtrar('1', this)">1er</button>
+        <button class="btn-filtro" onclick="filtrar('2', this)">2do</button>
+        <button class="btn-filtro" onclick="filtrar('3', this)">3er</button>
+        <button class="btn-filtro" onclick="filtrar('4', this)">4to</button>
+        <button class="btn-filtro" onclick="filtrar('5', this)">5to</button>
+        <button class="btn-filtro" onclick="filtrar('6', this)">6to</button>
     </div>
     
     <main id="container">
-        <div class="calendarios-grid"></div>
+        <p class="cargando">Cargando calendarios...</p>
     </main>
     
     <footer>
-        <p>2026 Calendarios JPII - Proyecto Educativo</p>
+        <p>2026 Calendarios JPII</p>
     </footer>
     
-    <div id="toast" class="toast">Calendarios actualizados</div>
+    <div class="sync-status" id="sync">Esperando...</div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
-        const STORAGE_KEY = 'calendarios_cache';
+        const STORAGE_KEY = 'calendarios';
         
         let todosLosCalendarios = [];
         let filtroActual = 'todos';
-        let gridElement = null;
+        let yaRenderizado = false;
         
-        // ========== UTILIDADES ==========
+        // ========== NOTIFICACIONES ==========
+        function mostrarMensaje(texto, tipo) {
+            const div = document.getElementById('estado-notif');
+            div.textContent = texto;
+            div.className = 'estado ' + tipo;
+            setTimeout(function() { div.textContent = ''; div.className = 'estado'; }, 3000);
+        }
+        
+        async function activarNotificaciones() {
+            if (!('Notification' in window)) {
+                mostrarMensaje('Navegador no soporta notificaciones', 'error');
+                return;
+            }
+            
+            if (Notification.permission === 'granted') {
+                mostrarMensaje('Ya activadas', 'success');
+                document.getElementById('btn-activar').disabled = true;
+                document.getElementById('btn-activar').textContent = '✅ Activadas';
+                return;
+            }
+            
+            const perm = await Notification.requestPermission();
+            if (perm === 'granted') {
+                mostrarMensaje('Notificaciones activadas', 'success');
+                document.getElementById('btn-activar').disabled = true;
+                document.getElementById('btn-activar').textContent = '✅ Activadas';
+            } else {
+                mostrarMensaje('Permiso denegado', 'error');
+            }
+        }
+        
+        function enviarNotificacion(titulo, cuerpo) {
+            if (Notification.permission !== 'granted') return;
+            
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.ready.then(function(reg) {
+                    reg.showNotification(titulo, { body: cuerpo, icon: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png' });
+                });
+            } else {
+                new Notification(titulo, { body: cuerpo, icon: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png' });
+            }
+        }
+        
+        // ========== MOSTRAR CALENDARIOS ==========
+        function filtrar(semestre, btn) {
+            filtroActual = semestre;
+            document.querySelectorAll('.btn-filtro').forEach(function(b) { b.classList.remove('activo'); });
+            btn.classList.add('activo');
+            renderizar();
+        }
+        
+        function renderizar() {
+            const container = document.getElementById('container');
+            
+            let filtrados = todosLosCalendarios;
+            if (filtroActual !== 'todos') {
+                filtrados = todosLosCalendarios.filter(function(c) {
+                    return String(c.semestre) === filtroActual;
+                });
+            }
+            
+            if (filtrados.length === 0) {
+                container.innerHTML = '<p class="vacio">No hay calendarios</p>';
+                return;
+            }
+            
+            // Crear grid solo una vez
+            let grid = container.querySelector('.calendarios-grid');
+            if (!grid) {
+                container.innerHTML = '<div class="calendarios-grid"></div>';
+                grid = container.querySelector('.calendarios-grid');
+            }
+            
+            // Generar HTML
+            let html = '';
+            filtrados.forEach(function(cal) {
+                const imgUrl = cal.imagen;
+                let imgHtml;
+                
+                if (imgUrl && imgUrl.trim() !== '') {
+                    // ✅ Usar imagen real con manejo de error interno
+                    imgHtml = '<img src="' + esc(imgUrl) + '" alt="' + esc(cal.titulo) + '" class="calendario-img" onerror="this.parentElement.innerHTML=\'<<div class=\\\'calendario-img-container\\\'><span>📅<<br>' + esc(cal.titulo) + '</span></div>\'">';
+                } else {
+                    // Sin imagen: mostrar placeholder CSS interno
+                    imgHtml = '<div class="calendario-img-container"><span>📅<<br>' + esc(cal.titulo) + '</span></div>';
+                }
+                
+                html += 
+                    '<div class="calendario-card">' +
+                        imgHtml +
+                        '<div class="calendario-info">' +
+                            '<h2>' + esc(cal.titulo) + '</h2>' +
+                            '<p class="meta">Grupo: ' + esc(cal.grupo || 'N/A') + ' | ' + esc(cal.fecha || 'N/A') + '</p>' +
+                            '<span class="badge">' + esc(cal.semestre || '?') + '° Semestre</span>' +
+                        '</div>' +
+                    '</div>';
+            });
+            
+            // Solo actualizar si cambió
+            if (grid.innerHTML !== html) {
+                grid.innerHTML = html;
+            }
+        }
+        
         function esc(str) {
             if (!str) return '';
             return String(str)
@@ -209,169 +299,75 @@
                 .replace(/"/g, '&quot;');
         }
         
-        function mostrarToast(mensaje, esError = false) {
-            const toast = document.getElementById('toast');
-            toast.textContent = mensaje;
-            toast.style.background = esError ? '#d32f2f' : '#2e7d32';
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2000);
-        }
-        
-        // ========== RENDERIZADO SIN PARPADEO ==========
-        function renderizar() {
-            if (!gridElement) return;
-            
-            // Filtrar según semestre activo
-            let filtrados = todosLosCalendarios;
-            if (filtroActual !== 'todos') {
-                filtrados = todosLosCalendarios.filter(c => String(c.semestre) === filtroActual);
-            }
-            
-            if (filtrados.length === 0) {
-                gridElement.innerHTML = '<div class="vacio">No hay calendarios para este semestre</div>';
-                return;
-            }
-            
-            // Generar HTML completo de las tarjetas
-            let html = '';
-            for (let i = 0; i < filtrados.length; i++) {
-                const cal = filtrados[i];
-                const imgUrl = cal.imagen || 'https://via.placeholder.com/400x600/667eea/ffffff?text=Sin+Imagen';
-                const titulo = esc(cal.titulo || 'Sin título');
-                const grupo = esc(cal.grupo || 'N/A');
-                const fecha = esc(cal.fecha || 'N/A');
-                const semestre = esc(cal.semestre || '?');
-                
-                html += `
-                    <div class="calendario-card">
-                        <img src="${imgUrl}" alt="${titulo}" class="calendario-img" loading="lazy" onerror="this.src='https://via.placeholder.com/400x600/667eea/ffffff?text=Error'">
-                        <div class="calendario-info">
-                            <h2>${titulo}</h2>
-                            <p class="meta">Grupo: ${grupo} | Fecha: ${fecha}</p>
-                            <span class="badge">${semestre}° Semestre</span>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Solo actualizar el DOM si el HTML cambió (evita repintados innecesarios)
-            if (gridElement.innerHTML !== html) {
-                gridElement.innerHTML = html;
-            }
-        }
-        
-        // ========== CARGA DE DATOS (SIN BORRAR EL GRID) ==========
-        async function cargarDatos(mostrarFeedback = false) {
+        // ========== CARGAR DATOS ==========
+        async function cargar() {
             try {
-                // Mostrar un pequeño indicador en el botón, pero sin tocar el grid
-                const btn = document.getElementById('btn-recargar');
-                const textoOriginal = btn.textContent;
-                if (mostrarFeedback) {
-                    btn.textContent = '🔄 Actualizando...';
-                    btn.disabled = true;
+                document.getElementById('sync').textContent = 'Cargando...';
+                
+                if (!yaRenderizado) {
+                    document.getElementById('container').innerHTML = '<p class="cargando">Cargando calendarios...</p>';
                 }
                 
                 const response = await fetch(API_URL);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
                 const data = await response.json();
-                if (!Array.isArray(data)) throw new Error('La API no devolvió un array');
                 
-                // Guardar en localStorage
+                if (!Array.isArray(data)) throw new Error('No es array');
+                
+                // Guardar
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 
-                // Verificar si los datos realmente cambiaron (comparación profunda)
-                const datosActualesStr = JSON.stringify(todosLosCalendarios);
-                const nuevosDatosStr = JSON.stringify(data);
+                // Verificar si cambió
+                const dataStr = JSON.stringify(data);
+                const actualStr = JSON.stringify(todosLosCalendarios);
                 
-                if (datosActualesStr !== nuevosDatosStr) {
+                if (dataStr !== actualStr) {
                     todosLosCalendarios = data;
                     renderizar();
-                    if (mostrarFeedback) {
-                        mostrarToast('Calendarios actualizados');
+                    yaRenderizado = true;
+                    document.getElementById('sync').textContent = '✓ Actualizado ' + new Date().toLocaleTimeString();
+                    
+                    // Notificar si hay cambios y no es primera carga
+                    if (actualStr !== '[]' && Notification.permission === 'granted') {
+                        enviarNotificacion('📅 Calendarios actualizados', 'Hay nuevos calendarios disponibles');
                     }
                 } else {
-                    if (mostrarFeedback) {
-                        mostrarToast('Ya están actualizados');
-                    }
-                }
-                
-                if (mostrarFeedback) {
-                    btn.textContent = textoOriginal;
-                    btn.disabled = false;
+                    document.getElementById('sync').textContent = '✓ Sin cambios ' + new Date().toLocaleTimeString();
                 }
                 
             } catch (error) {
                 console.error('Error:', error);
-                if (mostrarFeedback) {
-                    const btn = document.getElementById('btn-recargar');
-                    btn.textContent = '🔄 Reintentar';
-                    btn.disabled = false;
-                    mostrarToast('Error al actualizar: ' + error.message, true);
-                }
+                document.getElementById('sync').textContent = '✗ Error';
                 
-                // Si es la primera carga y no hay datos, intentar cargar del cache
-                if (todosLosCalendarios.length === 0) {
-                    const cache = localStorage.getItem(STORAGE_KEY);
-                    if (cache) {
+                if (!yaRenderizado) {
+                    const guardado = localStorage.getItem(STORAGE_KEY);
+                    if (guardado) {
                         try {
-                            todosLosCalendarios = JSON.parse(cache);
+                            todosLosCalendarios = JSON.parse(guardado);
                             renderizar();
-                            mostrarToast('Usando datos guardados localmente', false);
+                            yaRenderizado = true;
+                            document.getElementById('sync').textContent = '✓ Cache local';
                         } catch(e) {
-                            gridElement.innerHTML = '<div class="vacio">Error al cargar los calendarios</div>';
+                            document.getElementById('container').innerHTML = '<p class="error">Error al cargar</p>';
                         }
                     } else {
-                        gridElement.innerHTML = '<div class="vacio">No se pudieron cargar los calendarios</div>';
+                        document.getElementById('container').innerHTML = '<p class="error">Error al cargar</p>';
                     }
                 }
             }
         }
         
-        // ========== FILTROS ==========
-        function initFiltros() {
-            const botones = document.querySelectorAll('.btn-filtro');
-            botones.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const semestre = this.getAttribute('data-semestre');
-                    filtroActual = semestre;
-                    
-                    // Actualizar clase activo
-                    botones.forEach(b => b.classList.remove('activo'));
-                    this.classList.add('activo');
-                    
-                    // Re-renderizar (solo cambia el filtro, no recarga datos)
-                    renderizar();
-                });
-            });
+        // ========== INICIAR ==========
+        document.getElementById('btn-activar').addEventListener('click', activarNotificaciones);
+        document.getElementById('btn-recargar').addEventListener('click', cargar);
+        
+        if ('Notification' in window && Notification.permission === 'granted') {
+            document.getElementById('btn-activar').disabled = true;
+            document.getElementById('btn-activar').textContent = '✅ Activadas';
         }
         
-        // ========== INICIALIZACIÓN ==========
-        function init() {
-            gridElement = document.querySelector('.calendarios-grid');
-            
-            // Cargar desde cache primero (para que aparezca algo rápido)
-            const cache = localStorage.getItem(STORAGE_KEY);
-            if (cache) {
-                try {
-                    todosLosCalendarios = JSON.parse(cache);
-                    renderizar();
-                } catch(e) {}
-            }
-            
-            // Luego cargar datos frescos desde la API (sin mostrar feedback al inicio)
-            cargarDatos(false);
-            
-            // Configurar botón de recarga manual
-            document.getElementById('btn-recargar').addEventListener('click', () => cargarDatos(true));
-            
-            // Configurar filtros
-            initFiltros();
-        }
+        cargar();
         
-        init();
+        console.log('App iniciada');
     </script>
 </body>
 </html>
