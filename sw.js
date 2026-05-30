@@ -1,5 +1,5 @@
-const CACHE_NAME = 'calendarios-jpii-v1';
-const REPO_NAME = '/Noticias-EDU';
+const CACHE_NAME = 'calendarios-edu-v1';
+const REPO_NAME = '/Calendarios-EDU';
 
 const urlsToCache = [
     REPO_NAME + '/',
@@ -43,7 +43,6 @@ self.addEventListener('fetch', function(event) {
     );
 });
 
-// Manejar notificaciones desde el Service Worker
 self.addEventListener('notificationclick', function(event) {
     event.notification.close();
     event.waitUntil(
