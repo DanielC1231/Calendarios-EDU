@@ -14,12 +14,29 @@ Aplicación web progresiva (PWA) para consultar calendarios escolares dela Comun
 - GitHub Pages (Hosting gratuito)
 - Google Sheets (Base de datos)
 - Service Workers (Funcionamiento offline)
-
 📲 Instalación
 
-1. Abre la web en tu navegador
-2. Toca "Agregar a pantalla de inicio"
-3. ¡Listo! Funciona como app nativa
+En Android (Chrome):
+
+Abre la web en tu navegador Google Chrome.
+
+Toca el icono de los tres puntos verticales en la esquina superior derecha.
+
+Selecciona "Instalar aplicación" o "Agregar a la pantalla de inicio".
+
+Confirma tocando en "Instalar" o "Agregar".
+
+En iOS / iPhone (Safari):
+
+Abre la web en tu navegador Safari.
+
+Toca el botón de "Compartir" (el icono de un cuadrado con una flecha hacia arriba).
+
+Desplázate hacia abajo y selecciona "Agregar a inicio".
+
+Toca "Agregar" en la esquina superior derecha.
+
+¡Listo! Funciona como app nativa.
 🔗 Enlace
 https://danielc1231.github.io/Horario-EDU/
 
