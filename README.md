@@ -14,27 +14,28 @@ Aplicación web progresiva (PWA) para consultar calendarios escolares dela Comun
 - GitHub Pages (Hosting gratuito)
 - Google Sheets (Base de datos)
 - Service Workers (Funcionamiento offline)
+
 📲 Instalación
 
 En Android (Chrome):
 
-Abre la web en tu navegador Google Chrome.
+1.Abre la web en tu navegador Google Chrome.
 
-Toca el icono de los tres puntos verticales en la esquina superior derecha.
+2.Toca el icono de los tres puntos verticales en la esquina superior derecha.
 
-Selecciona "Instalar aplicación" o "Agregar a la pantalla de inicio".
+3.Selecciona "Instalar aplicación" o "Agregar a la pantalla de inicio".
 
-Confirma tocando en "Instalar" o "Agregar".
+4.Confirma tocando en "Instalar" o "Agregar".
 
 En iOS / iPhone (Safari):
 
-Abre la web en tu navegador Safari.
+1.Abre la web en tu navegador Safari.
 
-Toca el botón de "Compartir" (el icono de un cuadrado con una flecha hacia arriba).
+2.Toca el botón de "Compartir" (el icono de un cuadrado con una flecha hacia arriba).
 
-Desplázate hacia abajo y selecciona "Agregar a inicio".
+3.Desplázate hacia abajo y selecciona "Agregar a inicio".
 
-Toca "Agregar" en la esquina superior derecha.
+4.Toca "Agregar" en la esquina superior derecha.
 
 ¡Listo! Funciona como app nativa.
 🔗 Enlace
