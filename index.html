@@ -37,9 +37,7 @@
             transition: background 0.2s;
         }
         
-        .btn-recargar:hover {
-            background: #f0f0f0;
-        }
+        .btn-recargar:hover { background: #f0f0f0; }
         
         .filtros {
             display: flex;
@@ -60,10 +58,7 @@
             transition: background 0.2s, color 0.2s;
         }
         
-        .btn-filtro.activo {
-            background: #667eea;
-            color: white;
-        }
+        .btn-filtro.activo { background: #667eea; color: white; }
         
         .horarios-grid {
             display: grid;
@@ -81,14 +76,16 @@
             transition: transform 0.2s;
         }
         
-        .horario-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        .horario-card:hover { transform: translateY(-3px); }
+        
+        /* ✅ CURSOR POINTER para indicar que se puede clickear */
+        .horario-img-container, .horario-img {
+            width: 100%;
+            height: 400px;
+            cursor: pointer;
         }
         
         .horario-img-container {
-            width: 100%;
-            height: 400px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
@@ -100,28 +97,14 @@
         }
         
         .horario-img {
-            width: 100%;
-            height: 400px;
             object-fit: contain;
             background: #f8f9fa;
             display: block;
         }
         
-        .horario-info {
-            padding: 15px;
-        }
-        
-        .horario-info h2 {
-            color: #333;
-            font-size: 1.2em;
-            margin-bottom: 5px;
-        }
-        
-        .horario-info .meta {
-            color: #666;
-            font-size: 0.9em;
-        }
-        
+        .horario-info { padding: 15px; }
+        .horario-info h2 { color: #333; font-size: 1.2em; margin-bottom: 5px; }
+        .horario-info .meta { color: #666; font-size: 0.9em; }
         .horario-info .badge {
             display: inline-block;
             background: #667eea;
@@ -158,10 +141,79 @@
             z-index: 999;
         }
         
+        /* ✅ LIGHTBOX - Pantalla completa */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .lightbox.activo {
+            display: flex;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .lightbox-img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+            border-radius: 8px;
+            animation: zoomIn 0.3s ease;
+        }
+        
+        @keyframes zoomIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        /* ✅ BOTÓN X para cerrar */
+        .lightbox-cerrar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+            user-select: none;
+        }
+        
+        .lightbox-cerrar:hover { background: rgba(255,255,255,0.2); }
+        
+        /* ✅ TEXTO INFORMATIVO */
+        .lightbox-texto {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
         @media (max-width: 768px) {
             body { padding: 10px; }
             .horarios-grid { grid-template-columns: 1fr; }
             .horario-img, .horario-img-container { height: 300px; }
+            .lightbox-cerrar { top: 10px; right: 10px; font-size: 30px; }
         }
     </style>
 </head>
@@ -192,6 +244,13 @@
     
     <div class="sync-status" id="sync">Esperando...</div>
 
+    <!-- ✅ LIGHTBOX HTML -->
+    <div class="lightbox" id="lightbox" onclick="cerrarLightbox(event)">
+        <div class="lightbox-cerrar" onclick="cerrarLightboxX(event)">✕</div>
+        <img class="lightbox-img" id="lightbox-img" src="" alt="Horario ampliado">
+        <div class="lightbox-texto">Toca fuera de la imagen o la X para cerrar</div>
+    </div>
+
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
         const STORAGE_KEY = 'horarios_cache';
@@ -211,7 +270,39 @@
                 .replace(/"/g, '&quot;');
         }
         
-        // ========== RENDERIZADO SIN PARPADEO ==========
+        // ========== LIGHTBOX ==========
+        function abrirLightbox(src, titulo) {
+            const lightbox = document.getElementById('lightbox');
+            const img = document.getElementById('lightbox-img');
+            img.src = src;
+            img.alt = titulo || 'Horario';
+            lightbox.classList.add('activo');
+            document.body.style.overflow = 'hidden'; // Evitar scroll
+        }
+        
+        function cerrarLightbox(event) {
+            // Solo cerrar si clickearon en el fondo (no en la imagen)
+            if (event.target === event.currentTarget) {
+                document.getElementById('lightbox').classList.remove('activo');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        function cerrarLightboxX(event) {
+            event.stopPropagation(); // Evitar que se cierre dos veces
+            document.getElementById('lightbox').classList.remove('activo');
+            document.body.style.overflow = '';
+        }
+        
+        // Cerrar con tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('lightbox').classList.remove('activo');
+                document.body.style.overflow = '';
+            }
+        });
+        
+        // ========== RENDERIZADO ==========
         function renderizar() {
             if (!gridElement) return;
             
@@ -230,8 +321,11 @@
                 const imgUrl = cal.imagen;
                 let imgHtml;
                 
+                // ✅ AGREGAR onclick PARA ABRIR LIGHTBOX
+                const onclickAttr = imgUrl ? `onclick="abrirLightbox('${esc(imgUrl)}', '${esc(cal.titulo)}')"` : '';
+                
                 if (imgUrl && imgUrl.trim() !== '') {
-                    imgHtml = `<img src="${esc(imgUrl)}" alt="${esc(cal.titulo)}" class="horario-img" onerror="this.parentElement.innerHTML='<div class=\'horario-img-container\'><span>📅<br>${esc(cal.titulo)}</span></div>'">`;
+                    imgHtml = `<img src="${esc(imgUrl)}" alt="${esc(cal.titulo)}" class="horario-img" ${onclickAttr} onerror="this.parentElement.innerHTML='<div class=\\'horario-img-container\\' onclick=\\'abrirLightbox(&quot;${esc(imgUrl)}&quot;, &quot;${esc(cal.titulo)}&quot;)\\'><span>📅<br>${esc(cal.titulo)}</span></div>'">`;
                 } else {
                     imgHtml = `<div class="horario-img-container"><span>📅<br>${esc(cal.titulo)}</span></div>`;
                 }
@@ -265,10 +359,8 @@
                 const data = await response.json();
                 if (!Array.isArray(data)) throw new Error('La API no devolvió un array');
                 
-                // Guardar en localStorage
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 
-                // Verificar si realmente cambiaron los datos
                 const datosActualesStr = JSON.stringify(todosLosHorarios);
                 const nuevosDatosStr = JSON.stringify(data);
                 
@@ -277,25 +369,17 @@
                     renderizar();
                     yaRenderizado = true;
                     syncDiv.textContent = `✓ Actualizado ${new Date().toLocaleTimeString()}`;
-                    if (mostrarFeedback) {
-                        mostrarToast('Horarios actualizados');
-                    }
+                    if (mostrarFeedback) mostrarToast('Horarios actualizados');
                 } else {
                     syncDiv.textContent = `✓ Sin cambios ${new Date().toLocaleTimeString()}`;
-                    if (mostrarFeedback) {
-                        mostrarToast('Ya están actualizados');
-                    }
+                    if (mostrarFeedback) mostrarToast('Ya están actualizados');
                 }
                 
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('sync').textContent = '✗ Error';
+                if (mostrarFeedback) mostrarToast('Error al actualizar: ' + error.message, true);
                 
-                if (mostrarFeedback) {
-                    mostrarToast('Error al actualizar: ' + error.message, true);
-                }
-                
-                // Si es primera carga y no hay datos, intentar cargar del cache
                 if (!yaRenderizado) {
                     const cache = localStorage.getItem(STORAGE_KEY);
                     if (cache) {
@@ -317,37 +401,19 @@
         function mostrarToast(mensaje, esError = false) {
             const toast = document.createElement('div');
             toast.textContent = mensaje;
-            toast.style.position = 'fixed';
-            toast.style.bottom = '20px';
-            toast.style.right = '20px';
-            toast.style.background = esError ? '#d32f2f' : '#2e7d32';
-            toast.style.color = 'white';
-            toast.style.padding = '8px 16px';
-            toast.style.borderRadius = '30px';
-            toast.style.fontSize = '0.85rem';
-            toast.style.zIndex = '1000';
-            toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.2s';
+            toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:' + (esError ? '#d32f2f' : '#2e7d32') + ';color:white;padding:8px 16px;border-radius:30px;font-size:0.85rem;z-index:1000;opacity:0;transition:opacity 0.2s;';
             document.body.appendChild(toast);
-            
             setTimeout(() => toast.style.opacity = '1', 10);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 2000);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2000);
         }
         
         // ========== FILTROS ==========
         function initFiltros() {
-            const botones = document.querySelectorAll('.btn-filtro');
-            botones.forEach(btn => {
+            document.querySelectorAll('.btn-filtro').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const semestre = this.getAttribute('data-semestre');
-                    filtroActual = semestre;
-                    
-                    botones.forEach(b => b.classList.remove('activo'));
+                    filtroActual = this.getAttribute('data-semestre');
+                    document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('activo'));
                     this.classList.add('activo');
-                    
                     renderizar();
                 });
             });
@@ -357,7 +423,6 @@
         function init() {
             gridElement = document.querySelector('.horarios-grid');
             
-            // Cargar desde cache primero (para mostrar algo rápido)
             const cache = localStorage.getItem(STORAGE_KEY);
             if (cache) {
                 try {
@@ -368,13 +433,8 @@
                 } catch(e) {}
             }
             
-            // Luego cargar datos frescos desde la API (sin mostrar feedback al inicio)
             cargarDatos(false);
-            
-            // Botón de recarga manual
             document.getElementById('btn-recargar').addEventListener('click', () => cargarDatos(true));
-            
-            // Filtros
             initFiltros();
         }
         
