@@ -23,7 +23,7 @@ Aplicación web progresiva (PWA) para consultar calendarios escolares dela Comun
 
 📲 Instalación
 
-En Android (Chrome):
+**En Android (Chrome):**
 
 1.Abre la web en tu navegador Google Chrome.
 
@@ -33,7 +33,7 @@ En Android (Chrome):
 
 4.Confirma tocando en "Instalar" o "Agregar".
 
-En iOS / iPhone (Safari):
+**En iOS / iPhone (Safari):**
 
 1.Abre la web en tu navegador Safari.
 
