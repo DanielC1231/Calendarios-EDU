@@ -8,6 +8,10 @@ Aplicación web progresiva (PWA) para consultar calendarios escolares dela Comun
 - 📊 Filtros por semestre (1° al 6°)
 - 🖼️ Visualización de imágenes de calendarios
 - 💾 Funciona offline con caché local
+- 🔍 Filtros automáticos por periodo vigente:
+  - **Enero - Julio:** Muestra 2°, 4°, 6° semestre
+  - **Agosto - Diciembre:** Muestra 1°, 3°, 5° semestre
+- 🔍 Vista ampliada de imágenes: Toca cualquier horario para verlo en pantalla completa
 
 🛠️ Tecnologías
 
