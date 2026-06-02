@@ -25,6 +25,16 @@
         
         h1 { font-size: 2em; margin-bottom: 10px; }
         
+        .periodo-actual {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 10px;
+            display: inline-block;
+        }
+        
         .btn-recargar {
             background: white;
             color: #667eea;
@@ -55,10 +65,23 @@
             border-radius: 25px;
             cursor: pointer;
             font-size: 14px;
-            transition: background 0.2s, color 0.2s;
+            transition: all 0.3s;
         }
         
         .btn-filtro.activo { background: #667eea; color: white; }
+        
+        /* ✅ SEMESTRE OCULTO (no vigente) */
+        .btn-filtro.oculto {
+            display: none;
+        }
+        
+        /* ✅ SEMESTRE NO VIGENTE (visible pero deshabilitado) */
+        .btn-filtro.no-vigente {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: #ccc;
+            color: #999;
+        }
         
         .horarios-grid {
             display: grid;
@@ -78,7 +101,6 @@
         
         .horario-card:hover { transform: translateY(-3px); }
         
-        /* ✅ CURSOR POINTER para indicar que se puede clickear */
         .horario-img-container, .horario-img {
             width: 100%;
             height: 400px;
@@ -141,7 +163,6 @@
             z-index: 999;
         }
         
-        /* ✅ LIGHTBOX - Pantalla completa */
         .lightbox {
             display: none;
             position: fixed;
@@ -156,9 +177,7 @@
             animation: fadeIn 0.3s ease;
         }
         
-        .lightbox.activo {
-            display: flex;
-        }
+        .lightbox.activo { display: flex; }
         
         @keyframes fadeIn {
             from { opacity: 0; }
@@ -178,7 +197,6 @@
             to { transform: scale(1); opacity: 1; }
         }
         
-        /* ✅ BOTÓN X para cerrar */
         .lightbox-cerrar {
             position: absolute;
             top: 20px;
@@ -198,7 +216,6 @@
         
         .lightbox-cerrar:hover { background: rgba(255,255,255,0.2); }
         
-        /* ✅ TEXTO INFORMATIVO */
         .lightbox-texto {
             position: absolute;
             bottom: 20px;
@@ -221,17 +238,19 @@
     <header>
         <h1>📅 Horario JPII</h1>
         <p>Horarios escolares por semestre y grupo</p>
+        <div class="periodo-actual" id="periodo-actual">Cargando periodo...</div>
+        <br>
         <button id="btn-recargar" class="btn-recargar">🔄 Actualizar horarios</button>
     </header>
     
-    <div class="filtros">
-        <button class="btn-filtro activo" data-semestre="todos">Todos</button>
-        <button class="btn-filtro" data-semestre="1">1er Semestre</button>
-        <button class="btn-filtro" data-semestre="2">2do Semestre</button>
-        <button class="btn-filtro" data-semestre="3">3er Semestre</button>
-        <button class="btn-filtro" data-semestre="4">4to Semestre</button>
-        <button class="btn-filtro" data-semestre="5">5to Semestre</button>
-        <button class="btn-filtro" data-semestre="6">6to Semestre</button>
+    <div class="filtros" id="contenedor-filtros">
+        <button class="btn-filtro activo" data-semestre="todos" id="filtro-todos">Todos</button>
+        <button class="btn-filtro" data-semestre="1" id="filtro-1">1er Semestre</button>
+        <button class="btn-filtro" data-semestre="2" id="filtro-2">2do Semestre</button>
+        <button class="btn-filtro" data-semestre="3" id="filtro-3">3er Semestre</button>
+        <button class="btn-filtro" data-semestre="4" id="filtro-4">4to Semestre</button>
+        <button class="btn-filtro" data-semestre="5" id="filtro-5">5to Semestre</button>
+        <button class="btn-filtro" data-semestre="6" id="filtro-6">6to Semestre</button>
     </div>
     
     <main id="container">
@@ -244,7 +263,6 @@
     
     <div class="sync-status" id="sync">Esperando...</div>
 
-    <!-- ✅ LIGHTBOX HTML -->
     <div class="lightbox" id="lightbox" onclick="cerrarLightbox(event)">
         <div class="lightbox-cerrar" onclick="cerrarLightboxX(event)">✕</div>
         <img class="lightbox-img" id="lightbox-img" src="" alt="Horario ampliado">
@@ -259,6 +277,52 @@
         let filtroActual = 'todos';
         let yaRenderizado = false;
         let gridElement = null;
+        
+        // ========== DETECTAR PERIODO VIGENTE ==========
+        function detectarPeriodo() {
+            const mes = new Date().getMonth() + 1; // 1-12
+            
+            // Enero (1) a Julio (7): Semestres pares (2, 4, 6)
+            // Agosto (8) a Diciembre (12): Semestres impares (1, 3, 5)
+            
+            if (mes >= 1 && mes <= 7) {
+                return {
+                    nombre: 'Enero - Julio',
+                    vigentes: [2, 4, 6],
+                    noVigentes: [1, 3, 5]
+                };
+            } else {
+                return {
+                    nombre: 'Agosto - Diciembre',
+                    vigentes: [1, 3, 5],
+                    noVigentes: [2, 4, 6]
+                };
+            }
+        }
+        
+        function aplicarFiltrosPeriodo() {
+            const periodo = detectarPeriodo();
+            
+            // Mostrar nombre del periodo
+            document.getElementById('periodo-actual').textContent = 
+                '📆 Periodo vigente: ' + periodo.nombre;
+            
+            // Ocultar semestres no vigentes
+            periodo.noVigentes.forEach(function(num) {
+                const btn = document.getElementById('filtro-' + num);
+                if (btn) {
+                    btn.classList.add('oculto');
+                }
+            });
+            
+            // Asegurar que vigentes estén visibles
+            periodo.vigentes.forEach(function(num) {
+                const btn = document.getElementById('filtro-' + num);
+                if (btn) {
+                    btn.classList.remove('oculto');
+                }
+            });
+        }
         
         // ========== UTILIDADES ==========
         function esc(str) {
@@ -277,11 +341,10 @@
             img.src = src;
             img.alt = titulo || 'Horario';
             lightbox.classList.add('activo');
-            document.body.style.overflow = 'hidden'; // Evitar scroll
+            document.body.style.overflow = 'hidden';
         }
         
         function cerrarLightbox(event) {
-            // Solo cerrar si clickearon en el fondo (no en la imagen)
             if (event.target === event.currentTarget) {
                 document.getElementById('lightbox').classList.remove('activo');
                 document.body.style.overflow = '';
@@ -289,12 +352,11 @@
         }
         
         function cerrarLightboxX(event) {
-            event.stopPropagation(); // Evitar que se cierre dos veces
+            event.stopPropagation();
             document.getElementById('lightbox').classList.remove('activo');
             document.body.style.overflow = '';
         }
         
-        // Cerrar con tecla ESC
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 document.getElementById('lightbox').classList.remove('activo');
@@ -320,8 +382,6 @@
             filtrados.forEach(cal => {
                 const imgUrl = cal.imagen;
                 let imgHtml;
-                
-                // ✅ AGREGAR onclick PARA ABRIR LIGHTBOX
                 const onclickAttr = imgUrl ? `onclick="abrirLightbox('${esc(imgUrl)}', '${esc(cal.titulo)}')"` : '';
                 
                 if (imgUrl && imgUrl.trim() !== '') {
@@ -411,6 +471,9 @@
         function initFiltros() {
             document.querySelectorAll('.btn-filtro').forEach(btn => {
                 btn.addEventListener('click', function() {
+                    // No permitir clic en botones ocultos
+                    if (this.classList.contains('oculto')) return;
+                    
                     filtroActual = this.getAttribute('data-semestre');
                     document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('activo'));
                     this.classList.add('activo');
@@ -421,6 +484,9 @@
         
         // ========== INICIALIZACIÓN ==========
         function init() {
+            // ✅ Aplicar filtros de periodo primero
+            aplicarFiltrosPeriodo();
+            
             gridElement = document.querySelector('.horarios-grid');
             
             const cache = localStorage.getItem(STORAGE_KEY);
