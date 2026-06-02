@@ -1,3 +1,5 @@
+<img width="832" height="877" alt="Captura de pantalla 2026-06-01 181506" src="https://github.com/user-attachments/assets/cf523924-d34b-4472-96fd-3962d9524567" />
+<img width="1686" height="902" alt="Captura de pantalla 2026-06-01 181417" src="https://github.com/user-attachments/assets/a0b88ebf-24ac-49ed-8576-9b2d46ca2c28" />
 📅 Horarios JPII
 
 Aplicación web progresiva (PWA) para consultar calendarios escolares dela Comunidad Educativa Juan Pablo II, organizados por semestre y grupo.
