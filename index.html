@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Horario JPII</title>
-    <link rel="manifest" href="manifest.json">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
             background: #f5f5f5;
             padding: 20px;
         }
@@ -27,7 +26,6 @@
         
         .periodo-actual {
             background: rgba(255,255,255,0.2);
-            color: white;
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 14px;
@@ -44,10 +42,7 @@
             font-size: 16px;
             cursor: pointer;
             margin-top: 15px;
-            transition: background 0.2s;
         }
-        
-        .btn-recargar:hover { background: #f0f0f0; }
         
         .filtros {
             display: flex;
@@ -69,11 +64,7 @@
         }
         
         .btn-filtro.activo { background: #667eea; color: white; }
-        
-        /* SEMESTRE OCULTO según B35 del Excel */
-        .btn-filtro.oculto {
-            display: none;
-        }
+        .btn-filtro.oculto { display: none; }
         
         .horarios-grid {
             display: grid;
@@ -105,7 +96,6 @@
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 1.2em;
             text-align: center;
             padding: 20px;
         }
@@ -113,7 +103,6 @@
         .horario-img {
             object-fit: contain;
             background: #f8f9fa;
-            display: block;
         }
         
         .horario-info { padding: 15px; }
@@ -141,6 +130,7 @@
             padding: 20px;
             color: #999;
             margin-top: 30px;
+            font-size: 12px;
         }
         
         .sync-status {
@@ -152,7 +142,6 @@
             padding: 5px 10px;
             border-radius: 5px;
             font-size: 11px;
-            z-index: 999;
         }
         
         .lightbox {
@@ -162,33 +151,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0,0,0,0.85);
             z-index: 10000;
             justify-content: center;
             align-items: center;
-            animation: fadeIn 0.3s ease;
         }
         
         .lightbox.activo { display: flex; }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        .lightbox-img {
-            max-width: 95%;
-            max-height: 95%;
-            object-fit: contain;
-            border-radius: 8px;
-            animation: zoomIn 0.3s ease;
-        }
-        
-        @keyframes zoomIn {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        
+        .lightbox-img { max-width: 95%; max-height: 95%; object-fit: contain; }
         .lightbox-cerrar {
             position: absolute;
             top: 20px;
@@ -196,33 +166,6 @@
             color: white;
             font-size: 40px;
             cursor: pointer;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: background 0.2s;
-            user-select: none;
-        }
-        
-        .lightbox-cerrar:hover { background: rgba(255,255,255,0.2); }
-        
-        .lightbox-texto {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            font-size: 14px;
-            opacity: 0.8;
-        }
-        
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            .horarios-grid { grid-template-columns: 1fr; }
-            .horario-img, .horario-img-container { height: 300px; }
-            .lightbox-cerrar { top: 10px; right: 10px; font-size: 30px; }
         }
     </style>
 </head>
@@ -230,18 +173,18 @@
     <header>
         <h1>📅 Horario JPII</h1>
         <p>Horarios escolares por semestre y grupo</p>
-        <div class="periodo-actual" id="periodo-actual">Cargando periodo...</div>
+        <div class="periodo-actual" id="periodo-actual">Cargando...</div>
         <br>
         <button id="btn-recargar" class="btn-recargar">🔄 Actualizar horarios</button>
     </header>
     
     <div class="filtros" id="contenedor-filtros">
-        <button class="btn-filtro" data-semestre="1" id="filtro-1">1er Semestre</button>
-        <button class="btn-filtro" data-semestre="2" id="filtro-2">2do Semestre</button>
-        <button class="btn-filtro" data-semestre="3" id="filtro-3">3er Semestre</button>
-        <button class="btn-filtro" data-semestre="4" id="filtro-4">4to Semestre</button>
-        <button class="btn-filtro" data-semestre="5" id="filtro-5">5to Semestre</button>
-        <button class="btn-filtro" data-semestre="6" id="filtro-6">6to Semestre</button>
+        <button class="btn-filtro" data-semestre="1">1er Semestre</button>
+        <button class="btn-filtro" data-semestre="2">2do Semestre</button>
+        <button class="btn-filtro" data-semestre="3">3er Semestre</button>
+        <button class="btn-filtro" data-semestre="4">4to Semestre</button>
+        <button class="btn-filtro" data-semestre="5">5to Semestre</button>
+        <button class="btn-filtro" data-semestre="6">6to Semestre</button>
     </div>
     
     <main id="container">
@@ -249,126 +192,31 @@
     </main>
     
     <footer>
-        <p>2026 Horario JPII - Proyecto Educativo</p>
-        <p style="font-size:12px; margin-top:5px;">📌 Configuración: Celda B35 = semestres a mostrar (ej: 1,3,5) | Celda B36 = título del periodo</p>
+        <p>📌 Celda B35 = semestres a mostrar (ej: 1,2,3) | Celda B36 = título del periodo</p>
     </footer>
     
     <div class="sync-status" id="sync">Esperando...</div>
 
     <div class="lightbox" id="lightbox" onclick="cerrarLightbox(event)">
         <div class="lightbox-cerrar" onclick="cerrarLightboxX(event)">✕</div>
-        <img class="lightbox-img" id="lightbox-img" src="" alt="Horario ampliado">
-        <div class="lightbox-texto">Toca fuera de la imagen o la X para cerrar</div>
+        <img class="lightbox-img" id="lightbox-img" src="">
     </div>
 
     <script>
-        // IMPORTANTE: Reemplazar con la URL de tu Apps Script
         const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
-        const STORAGE_KEY = 'horarios_cache';
         
         let todosLosHorarios = [];
-        let filtroActual = null;
-        let yaRenderizado = false;
-        let gridElement = null;
+        let filtroActual = '1';
         let semestresPermitidos = [1, 2, 3, 4, 5, 6];
-        let tituloPeriodo = "Periodo Académico";
         
-        // ========== LEER B35 Y B36 DEL EXCEL ==========
-        async function leerConfiguracionExcel(data) {
-            try {
-                let valorB35 = null;
-                let valorB36 = null;
-                
-                // Buscar en los datos la configuración de fila 35 y 36
-                if (Array.isArray(data)) {
-                    for (let i = 0; i < data.length; i++) {
-                        const item = data[i];
-                        // Buscar fila 35
-                        if (item.fila === 35) {
-                            valorB35 = item.valor || item.B || item.semestres_visibles;
-                            console.log('B35 encontrado:', valorB35);
-                        }
-                        // Buscar fila 36
-                        if (item.fila === 36) {
-                            valorB36 = item.valor || item.B || item.titulo_periodo;
-                            console.log('B36 encontrado:', valorB36);
-                        }
-                    }
-                }
-                
-                // Procesar B35 - semestres permitidos
-                if (valorB35 !== null && valorB35 !== undefined && String(valorB35).trim() !== '') {
-                    let valorStr = String(valorB35).trim().toLowerCase();
-                    
-                    if (valorStr === 'todos') {
-                        semestresPermitidos = [1, 2, 3, 4, 5, 6];
-                    } else {
-                        let numeros = valorStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 6);
-                        if (numeros.length > 0) {
-                            semestresPermitidos = numeros;
-                        }
-                    }
-                }
-                
-                // Procesar B36 - título
-                if (valorB36 !== null && valorB36 !== undefined && String(valorB36).trim() !== '') {
-                    tituloPeriodo = String(valorB36).trim();
-                } else {
-                    // Generar título automático
-                    if (semestresPermitidos.length === 6) {
-                        tituloPeriodo = "📆 Todos los Semestres";
-                    } else {
-                        tituloPeriodo = "📆 Semestres: " + semestresPermitidos.join(", ");
-                    }
-                }
-                
-                document.getElementById('periodo-actual').textContent = tituloPeriodo;
-                return true;
-                
-            } catch (error) {
-                console.error('Error leyendo configuración:', error);
-                return false;
-            }
-        }
-        
-        // ========== APLICAR FILTROS SEGÚN B35 ==========
-        function aplicarFiltrosPorExcel() {
-            for (let i = 1; i <= 6; i++) {
-                const btn = document.getElementById('filtro-' + i);
-                if (btn) {
-                    if (semestresPermitidos.includes(i)) {
-                        btn.classList.remove('oculto');
-                    } else {
-                        btn.classList.add('oculto');
-                    }
-                }
-            }
-            
-            // Seleccionar primer semestre permitido si no hay filtro
-            if (filtroActual === null && semestresPermitidos.length > 0) {
-                filtroActual = String(semestresPermitidos[0]);
-                document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('activo'));
-                const btnActivo = document.getElementById('filtro-' + filtroActual);
-                if (btnActivo) btnActivo.classList.add('activo');
-            }
-        }
-        
-        // ========== UTILIDADES ==========
         function esc(str) {
             if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
         
-        // ========== LIGHTBOX ==========
-        function abrirLightbox(src, titulo) {
+        function abrirLightbox(src) {
             const lightbox = document.getElementById('lightbox');
-            const img = document.getElementById('lightbox-img');
-            img.src = src;
-            img.alt = titulo || 'Horario';
+            document.getElementById('lightbox-img').src = src;
             lightbox.classList.add('activo');
             document.body.style.overflow = 'hidden';
         }
@@ -386,24 +234,17 @@
             document.body.style.overflow = '';
         }
         
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                document.getElementById('lightbox').classList.remove('activo');
-                document.body.style.overflow = '';
-            }
-        });
-        
-        // ========== RENDERIZADO ==========
         function renderizar() {
-            if (!gridElement) return;
+            const grid = document.querySelector('.horarios-grid');
+            if (!grid) return;
             
             let filtrados = todosLosHorarios;
-            if (filtroActual !== null && filtroActual !== 'todos') {
+            if (filtroActual !== 'todos') {
                 filtrados = todosLosHorarios.filter(c => String(c.semestre) === filtroActual);
             }
             
             if (filtrados.length === 0) {
-                gridElement.innerHTML = '<div class="vacio">No hay horarios para este semestre</div>';
+                grid.innerHTML = '<div class="vacio">No hay horarios para este semestre</div>';
                 return;
             }
             
@@ -411,10 +252,9 @@
             filtrados.forEach(cal => {
                 const imgUrl = cal.imagen;
                 let imgHtml;
-                const onclickAttr = imgUrl ? `onclick="abrirLightbox('${esc(imgUrl)}', '${esc(cal.titulo)}')"` : '';
                 
-                if (imgUrl && imgUrl.trim() !== '') {
-                    imgHtml = `<img src="${esc(imgUrl)}" alt="${esc(cal.titulo)}" class="horario-img" ${onclickAttr} onerror="this.parentElement.innerHTML='<div class=\\'horario-img-container\\' onclick=\\'abrirLightbox(&quot;${esc(imgUrl)}&quot;, &quot;${esc(cal.titulo)}&quot;)\\'><span>📅<br>${esc(cal.titulo)}</span></div>'">`;
+                if (imgUrl && imgUrl.trim()) {
+                    imgHtml = `<img src="${esc(imgUrl)}" class="horario-img" onclick="abrirLightbox('${esc(imgUrl)}')" onerror="this.parentElement.innerHTML='<div class=\\'horario-img-container\\'><span>📅<br>${esc(cal.titulo)}</span></div>'">`;
                 } else {
                     imgHtml = `<div class="horario-img-container"><span>📅<br>${esc(cal.titulo)}</span></div>`;
                 }
@@ -424,122 +264,110 @@
                         ${imgHtml}
                         <div class="horario-info">
                             <h2>${esc(cal.titulo)}</h2>
-                            <p class="meta">Grupo: ${esc(cal.grupo || 'N/A')} | Fecha: ${esc(cal.fecha || 'N/A')}</p>
-                            <span class="badge">${esc(cal.semestre || '?')}° Semestre</span>
+                            <p class="meta">Grupo: ${esc(cal.grupo || 'N/A')}</p>
+                            <span class="badge">${esc(cal.semestre)}° Semestre</span>
                         </div>
                     </div>
                 `;
             });
             
-            if (gridElement.innerHTML !== html) {
-                gridElement.innerHTML = html;
-            }
+            grid.innerHTML = html;
         }
         
-        // ========== CARGAR DATOS ==========
-        async function cargarDatos(mostrarFeedback = false) {
+        async function cargarDatos() {
             try {
                 const syncDiv = document.getElementById('sync');
                 syncDiv.textContent = 'Actualizando...';
                 
                 const response = await fetch(API_URL + '?t=' + Date.now());
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
                 const data = await response.json();
                 
-                if (!Array.isArray(data)) throw new Error('La API no devolvió un array');
+                console.log('Datos recibidos:', data);
                 
                 // Leer configuración de B35 y B36
-                await leerConfiguracionExcel(data);
+                let b35 = '';
+                let b36 = '';
                 
-                // Filtrar solo los horarios (excluir filas de configuración)
-                const horariosData = data.filter(item => item.fila !== 35 && item.fila !== 36 && !item.configuracion);
-                
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(horariosData));
-                
-                const datosActualesStr = JSON.stringify(todosLosHorarios);
-                const nuevosDatosStr = JSON.stringify(horariosData);
-                
-                if (datosActualesStr !== nuevosDatosStr) {
-                    todosLosHorarios = horariosData;
-                    aplicarFiltrosPorExcel();
-                    renderizar();
-                    yaRenderizado = true;
-                    syncDiv.textContent = `✓ Actualizado ${new Date().toLocaleTimeString()}`;
-                    if (mostrarFeedback) mostrarToast('Horarios actualizados');
-                } else {
-                    aplicarFiltrosPorExcel();
-                    renderizar();
-                    syncDiv.textContent = `✓ Sin cambios ${new Date().toLocaleTimeString()}`;
-                    if (mostrarFeedback) mostrarToast('Ya están actualizados');
+                for (let item of data) {
+                    if (item.celda === 'B35' || item.tipo === 'config' && item.celda === 'B35') {
+                        b35 = item.valor;
+                    }
+                    if (item.celda === 'B36' || item.tipo === 'config' && item.celda === 'B36') {
+                        b36 = item.valor;
+                    }
                 }
+                
+                console.log('B35:', b35);
+                console.log('B36:', b36);
+                
+                // Procesar B35
+                if (b35 && b35.toString().trim() !== '') {
+                    let valores = b35.toString().split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 6);
+                    if (valores.length > 0) {
+                        semestresPermitidos = valores;
+                    }
+                }
+                
+                // Procesar B36 (título)
+                if (b36 && b36.toString().trim() !== '') {
+                    document.getElementById('periodo-actual').textContent = b36;
+                } else {
+                    document.getElementById('periodo-actual').textContent = '📆 Semestres: ' + semestresPermitidos.join(', ');
+                }
+                
+                // Ocultar botones según B35
+                for (let i = 1; i <= 6; i++) {
+                    const btn = document.getElementById('filtro-' + i);
+                    if (btn) {
+                        if (semestresPermitidos.includes(i)) {
+                            btn.classList.remove('oculto');
+                        } else {
+                            btn.classList.add('oculto');
+                        }
+                    }
+                }
+                
+                // Seleccionar primer semestre permitido
+                if (semestresPermitidos.length > 0) {
+                    filtroActual = String(semestresPermitidos[0]);
+                    document.querySelectorAll('.btn-filtro').forEach(btn => {
+                        btn.classList.remove('activo');
+                        if (btn.getAttribute('data-semestre') === filtroActual) {
+                            btn.classList.add('activo');
+                        }
+                    });
+                }
+                
+                // Filtrar horarios (excluir configuraciones)
+                const horarios = data.filter(item => !item.celda && item.tipo !== 'config' && item.semestre);
+                
+                if (horarios.length > 0) {
+                    todosLosHorarios = horarios;
+                    renderizar();
+                }
+                
+                syncDiv.textContent = `✓ Actualizado ${new Date().toLocaleTimeString()}`;
                 
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('sync').textContent = '✗ Error';
-                if (mostrarFeedback) mostrarToast('Error al actualizar: ' + error.message, true);
-                
-                if (!yaRenderizado) {
-                    const cache = localStorage.getItem(STORAGE_KEY);
-                    if (cache) {
-                        try {
-                            todosLosHorarios = JSON.parse(cache);
-                            renderizar();
-                            yaRenderizado = true;
-                            document.getElementById('sync').textContent = '✓ Usando caché local';
-                        } catch(e) {
-                            gridElement.innerHTML = '<div class="vacio">Error al cargar los horarios</div>';
-                        }
-                    } else {
-                        gridElement.innerHTML = '<div class="vacio">No se pudieron cargar los horarios</div>';
-                    }
-                }
             }
         }
         
-        function mostrarToast(mensaje, esError = false) {
-            const toast = document.createElement('div');
-            toast.textContent = mensaje;
-            toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:' + (esError ? '#d32f2f' : '#2e7d32') + ';color:white;padding:8px 16px;border-radius:30px;font-size:0.85rem;z-index:1000;opacity:0;transition:opacity 0.2s;';
-            document.body.appendChild(toast);
-            setTimeout(() => toast.style.opacity = '1', 10);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2000);
-        }
+        // Inicializar
+        document.getElementById('btn-recargar').addEventListener('click', cargarDatos);
         
-        // ========== FILTROS MANUALES ==========
-        function initFiltros() {
-            document.querySelectorAll('.btn-filtro').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    if (this.classList.contains('oculto')) return;
-                    
-                    filtroActual = this.getAttribute('data-semestre');
-                    document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('activo'));
-                    this.classList.add('activo');
-                    renderizar();
-                });
+        document.querySelectorAll('.btn-filtro').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (this.classList.contains('oculto')) return;
+                filtroActual = this.getAttribute('data-semestre');
+                document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('activo'));
+                this.classList.add('activo');
+                renderizar();
             });
-        }
+        });
         
-        // ========== INICIALIZACIÓN ==========
-        async function init() {
-            gridElement = document.querySelector('.horarios-grid');
-            
-            const cache = localStorage.getItem(STORAGE_KEY);
-            if (cache) {
-                try {
-                    todosLosHorarios = JSON.parse(cache);
-                    renderizar();
-                    yaRenderizado = true;
-                    document.getElementById('sync').textContent = '✓ Caché local';
-                } catch(e) {}
-            }
-            
-            cargarDatos(false);
-            document.getElementById('btn-recargar').addEventListener('click', () => cargarDatos(true));
-            initFiltros();
-        }
-        
-        init();
+        cargarDatos();
     </script>
 </body>
 </html>
