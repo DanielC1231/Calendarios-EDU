@@ -192,7 +192,7 @@
     </main>
     
     <footer>
-        <p>📌 <strong>Instrucciones:</strong> En la celda <strong>B35</strong> escribe los semestres (ej: 1,2,3 o solo 1). En <strong>B36</strong> escribe el título.</p>
+        <p>📌 <strong>Instrucciones:</strong> En la celda <strong>B35</strong> escribe los semestres (ej: 2,4,6 o solo 1). En <strong>B36</strong> escribe el título.</p>
     </footer>
     
     <div class="sync-status" id="sync">Esperando...</div>
@@ -243,15 +243,14 @@
                 if (btn) {
                     if (semestresPermitidos.includes(i)) {
                         btn.classList.remove('oculto');
-                        console.log('Mostrando botón semestre', i);
+                        console.log('Mostrando semestre', i);
                     } else {
                         btn.classList.add('oculto');
-                        console.log('Ocultando botón semestre', i);
+                        console.log('Ocultando semestre', i);
                     }
                 }
             }
             
-            // Seleccionar el primer semestre permitido automáticamente
             if (semestresPermitidos.length > 0) {
                 filtroActual = String(semestresPermitidos[0]);
                 document.querySelectorAll('.btn-filtro').forEach(btn => {
@@ -271,8 +270,6 @@
             if (filtroActual !== 'todos') {
                 filtrados = todosLosHorarios.filter(c => String(c.semestre || c.Semestre) === filtroActual);
             }
-            
-            console.log('Filtrando semestre:', filtroActual, 'Horarios encontrados:', filtrados.length);
             
             if (filtrados.length === 0) {
                 grid.innerHTML = '<div class="vacio">📭 No hay horarios para este semestre</div>';
@@ -315,32 +312,42 @@
                 
                 console.log('Datos completos:', data);
                 
-                // LEER CONFIGURACIÓN
+                // BUSCAR LA CONFIGURACIÓN (el elemento con _tipo = "config")
                 let b35 = '';
                 let b36 = '';
                 
-                if (data.config) {
+                if (Array.isArray(data)) {
+                    for (let item of data) {
+                        if (item._tipo === 'config') {
+                            b35 = item.B35 || '';
+                            b36 = item.B36 || '';
+                            console.log('Config encontrada - B35:', b35, 'B36:', b36);
+                            break;
+                        }
+                    }
+                }
+                
+                // Si no encontró con _tipo, intentar buscar por si está suelto
+                if (b35 === '' && data.config) {
                     b35 = data.config.b35 || '';
                     b36 = data.config.b36 || '';
                 }
                 
-                console.log('B35 leído:', b35);
-                console.log('B36 leído:', b36);
+                console.log('B35 final:', b35);
+                console.log('B36 final:', b36);
                 
-                // Procesar B35 - semestres permitidos
-                semestresPermitidos = []; // Reiniciar
+                // Procesar B35
+                semestresPermitidos = [];
                 
                 if (b35 && b35.toString().trim() !== '') {
                     let b35Str = b35.toString().trim();
                     
-                    // Si tiene comas, separar
                     if (b35Str.includes(',')) {
                         let valores = b35Str.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 6);
                         if (valores.length > 0) {
                             semestresPermitidos = valores;
                         }
                     } else {
-                        // Si es un solo número
                         let unico = parseInt(b35Str);
                         if (!isNaN(unico) && unico >= 1 && unico <= 6) {
                             semestresPermitidos = [unico];
@@ -348,28 +355,26 @@
                     }
                 }
                 
-                // Si no se encontró nada, mostrar todos
                 if (semestresPermitidos.length === 0) {
                     semestresPermitidos = [1, 2, 3, 4, 5, 6];
                 }
                 
                 console.log('Semestres permitidos FINAL:', semestresPermitidos);
                 
-                // Procesar B36 - título
+                // Título
                 if (b36 && b36.toString().trim() !== '') {
                     document.getElementById('periodo-actual').textContent = b36;
                 } else {
                     document.getElementById('periodo-actual').textContent = '📆 Semestres: ' + semestresPermitidos.join(', ');
                 }
                 
-                // OCULTAR BOTONES (función clave)
                 ocultarBotones();
                 
-                // Cargar horarios
-                if (data.horarios && Array.isArray(data.horarios)) {
+                // Cargar horarios (excluir el elemento de configuración)
+                if (Array.isArray(data)) {
+                    todosLosHorarios = data.filter(item => item._tipo !== 'config');
+                } else if (data.horarios) {
                     todosLosHorarios = data.horarios;
-                } else if (Array.isArray(data)) {
-                    todosLosHorarios = data;
                 } else {
                     todosLosHorarios = [];
                 }
@@ -383,7 +388,6 @@
             }
         }
         
-        // Inicializar eventos
         document.getElementById('btn-recargar').addEventListener('click', cargarDatos);
         
         document.querySelectorAll('.btn-filtro').forEach(btn => {
@@ -396,7 +400,6 @@
             });
         });
         
-        // Cargar datos al inicio
         cargarDatos();
     </script>
 </body>
