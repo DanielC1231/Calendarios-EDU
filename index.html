@@ -192,7 +192,7 @@
     </main>
     
     <footer>
-        <p>📌 Celda B35 = semestres a mostrar (ej: 1,2,3) | Celda B36 = título del periodo</p>
+        <p>📌 <strong>Instrucciones:</strong> En la celda <strong>B35</strong> escribe los semestres (ej: 1,2,3). En <strong>B36</strong> escribe el título.</p>
     </footer>
     
     <div class="sync-status" id="sync">Esperando...</div>
@@ -203,6 +203,7 @@
     </div>
 
     <script>
+        // IMPORTANTE: Reemplazar con la URL de tu Apps Script
         const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
         
         let todosLosHorarios = [];
@@ -244,28 +245,28 @@
             }
             
             if (filtrados.length === 0) {
-                grid.innerHTML = '<div class="vacio">No hay horarios para este semestre</div>';
+                grid.innerHTML = '<div class="vacio">📭 No hay horarios para este semestre</div>';
                 return;
             }
             
             let html = '';
             filtrados.forEach(cal => {
-                const imgUrl = cal.imagen;
+                const imgUrl = cal.imagen || cal.Imagen || cal.url || '';
                 let imgHtml;
                 
                 if (imgUrl && imgUrl.trim()) {
-                    imgHtml = `<img src="${esc(imgUrl)}" class="horario-img" onclick="abrirLightbox('${esc(imgUrl)}')" onerror="this.parentElement.innerHTML='<div class=\\'horario-img-container\\'><span>📅<br>${esc(cal.titulo)}</span></div>'">`;
+                    imgHtml = `<img src="${esc(imgUrl)}" class="horario-img" onclick="abrirLightbox('${esc(imgUrl)}')" onerror="this.parentElement.innerHTML='<div class=\\'horario-img-container\\'><span>📅<br>${esc(cal.titulo || cal.Titulo)}</span></div>'">`;
                 } else {
-                    imgHtml = `<div class="horario-img-container"><span>📅<br>${esc(cal.titulo)}</span></div>`;
+                    imgHtml = `<div class="horario-img-container"><span>📅<br>${esc(cal.titulo || cal.Titulo)}</span></div>`;
                 }
                 
                 html += `
                     <div class="horario-card">
                         ${imgHtml}
                         <div class="horario-info">
-                            <h2>${esc(cal.titulo)}</h2>
-                            <p class="meta">Grupo: ${esc(cal.grupo || 'N/A')}</p>
-                            <span class="badge">${esc(cal.semestre)}° Semestre</span>
+                            <h2>${esc(cal.titulo || cal.Titulo)}</h2>
+                            <p class="meta">Grupo: ${esc(cal.grupo || cal.Grupo || 'N/A')}</p>
+                            <span class="badge">${esc(cal.semestre || cal.Semestre)}° Semestre</span>
                         </div>
                     </div>
                 `;
@@ -277,45 +278,48 @@
         async function cargarDatos() {
             try {
                 const syncDiv = document.getElementById('sync');
-                syncDiv.textContent = 'Actualizando...';
+                syncDiv.textContent = '🔄 Actualizando...';
                 
                 const response = await fetch(API_URL + '?t=' + Date.now());
                 const data = await response.json();
                 
-                console.log('Datos recibidos:', data);
+                console.log('Datos completos:', data);
                 
-                // Leer configuración de B35 y B36
+                // LEER CONFIGURACIÓN (nuevo formato)
                 let b35 = '';
                 let b36 = '';
                 
-                for (let item of data) {
-                    if (item.celda === 'B35' || item.tipo === 'config' && item.celda === 'B35') {
-                        b35 = item.valor;
-                    }
-                    if (item.celda === 'B36' || item.tipo === 'config' && item.celda === 'B36') {
-                        b36 = item.valor;
-                    }
+                if (data.config) {
+                    b35 = data.config.b35 || '';
+                    b36 = data.config.b36 || '';
                 }
                 
-                console.log('B35:', b35);
-                console.log('B36:', b36);
+                console.log('B35 leído:', b35);
+                console.log('B36 leído:', b36);
                 
-                // Procesar B35
+                // Procesar B35 - semestres permitidos
                 if (b35 && b35.toString().trim() !== '') {
                     let valores = b35.toString().split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 6);
                     if (valores.length > 0) {
                         semestresPermitidos = valores;
+                        console.log('Semestres permitidos:', semestresPermitidos);
+                    } else {
+                        // Si no se pudo parsear, intentar como número único
+                        let unico = parseInt(b35);
+                        if (!isNaN(unico) && unico >= 1 && unico <= 6) {
+                            semestresPermitidos = [unico];
+                        }
                     }
                 }
                 
-                // Procesar B36 (título)
+                // Procesar B36 - título
                 if (b36 && b36.toString().trim() !== '') {
                     document.getElementById('periodo-actual').textContent = b36;
                 } else {
                     document.getElementById('periodo-actual').textContent = '📆 Semestres: ' + semestresPermitidos.join(', ');
                 }
                 
-                // Ocultar botones según B35
+                // OCULTAR BOTONES según B35
                 for (let i = 1; i <= 6; i++) {
                     const btn = document.getElementById('filtro-' + i);
                     if (btn) {
@@ -338,23 +342,25 @@
                     });
                 }
                 
-                // Filtrar horarios (excluir configuraciones)
-                const horarios = data.filter(item => !item.celda && item.tipo !== 'config' && item.semestre);
-                
-                if (horarios.length > 0) {
-                    todosLosHorarios = horarios;
-                    renderizar();
+                // Cargar horarios
+                if (data.horarios && Array.isArray(data.horarios)) {
+                    todosLosHorarios = data.horarios;
+                } else if (Array.isArray(data)) {
+                    todosLosHorarios = data;
+                } else {
+                    todosLosHorarios = [];
                 }
                 
+                renderizar();
                 syncDiv.textContent = `✓ Actualizado ${new Date().toLocaleTimeString()}`;
                 
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('sync').textContent = '✗ Error';
+                document.getElementById('sync').textContent = '✗ Error: ' + error.message;
             }
         }
         
-        // Inicializar
+        // Inicializar eventos
         document.getElementById('btn-recargar').addEventListener('click', cargarDatos);
         
         document.querySelectorAll('.btn-filtro').forEach(btn => {
@@ -367,6 +373,7 @@
             });
         });
         
+        // Cargar datos al inicio
         cargarDatos();
     </script>
 </body>
