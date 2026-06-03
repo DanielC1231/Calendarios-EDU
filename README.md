@@ -117,7 +117,7 @@ En este video se explica cómo controlar los semestres que aparecen en la págin
 ## 👨‍💻 CONOCE A LOS AUTORES
 
 **🧑‍💻 Daniel C.** - Desarrollador 
-- Apasionado por la tecnología 
+- Apasionado por la tecnología y los programas de código abierto
 - Le gusta: 📱 Apps, ⚡ Optimización
 - Hobbies: Jugar videojuegos, tecnología, fútbol
 - Dato curioso: Puede pasar horas programando hasta que salga de forma correcta
