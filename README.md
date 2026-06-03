@@ -114,4 +114,26 @@ En este video se explica cómo subir imagenes en github, en google sheets poner 
 [▶️ Haz clic aquí para ver el videotutorial 2](https://drive.google.com/file/d/1yHaFRZaiI7IBMI-5Jys2u4HcYDnGkba_/view?usp=sharing)
 En este video se explica cómo controlar los semestres que aparecen en la página usando las celdas B35 y B36 del Google Sheets.
 
+## 👨‍💻 CONOCE A LOS AUTORES
+
+**🧑‍💻 Daniel C.** - Desarrollador 
+- Apasionado por la tecnología 
+- Le gusta: 📱 Apps, ⚡ Optimización
+- Hobbies: Jugar videojuegos, tecnología, fútbol
+- Dato curioso: Puede pasar horas programando hasta que salga de forma correcta
+- [GitHub](https://github.com/DanielC1231)
+
+**🧑‍💻 Martin I.** - Desarrollador 
+- Le gusta resolver problemas
+- Le gusta: 🗄️ Bases de datos,  🎨 Diseño visual
+- Hobbies: Jugar videojuegos, ver películas y series
+- Dato curioso: Se emociona cuando las cosas salen como la habíamos visualizado
+- [GitHub](https://github.com/rodriguezmartin-dotcom)
+
+> *"Creamos esta app para que los horarios sean fáciles de consultar desde el celular"*
+
+| Daniel C. | Martin I. |
+|-----------|-----------|
+| "Si algo funciona no lo toques... pero siempre se puede mejorar" | "Al final todo estará bien, y si no está bien, no hemos llegado al final" |
+
 Proyecto educativo colaborativo - 2026
