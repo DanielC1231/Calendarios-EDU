@@ -106,5 +106,12 @@ Las imágenes deben subirse a la carpeta `imagenes` del repositorio:
 [https://danielc1231.github.io/Horario-EDU/](https://danielc1231.github.io/Horario-EDU/)
 
 ---
+## 📹 Videotutoriales
+
+[▶️ Haz clic aquí para ver el videotutorial 1](https://drive.google.com/file/d/1zrrO2UJd_TYOLA3Gl985Q9yY6gEk0FoL/view?usp=sharing)
+
+En este video se explica cómo subir imagenes en github, en google sheets poner el link correcto en la parte imagenes.
+[▶️ Haz clic aquí para ver el videotutorial 2](https://drive.google.com/file/d/1yHaFRZaiI7IBMI-5Jys2u4HcYDnGkba_/view?usp=sharing)
+En este video se explica cómo controlar los semestres que aparecen en la página usando las celdas B35 y B36 del Google Sheets.
 
 Proyecto educativo colaborativo - 2026
