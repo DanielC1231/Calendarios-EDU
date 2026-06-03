@@ -192,7 +192,7 @@
     </main>
     
     <footer>
-        <p>📌 <strong>Instrucciones:</strong> En la celda <strong>B35</strong> escribe los semestres (ej: 1,2,3). En <strong>B36</strong> escribe el título.</p>
+        <p>📌 <strong>Instrucciones:</strong> En la celda <strong>B35</strong> escribe los semestres (ej: 1,2,3 o solo 1). En <strong>B36</strong> escribe el título.</p>
     </footer>
     
     <div class="sync-status" id="sync">Esperando...</div>
@@ -203,8 +203,8 @@
     </div>
 
     <script>
-        // urlapi
-        const API_URL = 'https://script.google.com/macros/s/AKfycbxzfnQQ6f3JL7NPp03mOi-oECa12eSv8eWGe8xWA-kMWdpr5KOZwT0Z-fA015lyD5JpeQ/exec';
+        // IMPORTANTE: Reemplazar con la URL de tu Apps Script
+        const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
         
         let todosLosHorarios = [];
         let filtroActual = '1';
@@ -235,14 +235,44 @@
             document.body.style.overflow = '';
         }
         
+        function ocultarBotones() {
+            console.log('Ocultando botones. Semestres permitidos:', semestresPermitidos);
+            
+            for (let i = 1; i <= 6; i++) {
+                const btn = document.getElementById('filtro-' + i);
+                if (btn) {
+                    if (semestresPermitidos.includes(i)) {
+                        btn.classList.remove('oculto');
+                        console.log('Mostrando botón semestre', i);
+                    } else {
+                        btn.classList.add('oculto');
+                        console.log('Ocultando botón semestre', i);
+                    }
+                }
+            }
+            
+            // Seleccionar el primer semestre permitido automáticamente
+            if (semestresPermitidos.length > 0) {
+                filtroActual = String(semestresPermitidos[0]);
+                document.querySelectorAll('.btn-filtro').forEach(btn => {
+                    btn.classList.remove('activo');
+                    if (btn.getAttribute('data-semestre') === filtroActual) {
+                        btn.classList.add('activo');
+                    }
+                });
+            }
+        }
+        
         function renderizar() {
             const grid = document.querySelector('.horarios-grid');
             if (!grid) return;
             
             let filtrados = todosLosHorarios;
             if (filtroActual !== 'todos') {
-                filtrados = todosLosHorarios.filter(c => String(c.semestre) === filtroActual);
+                filtrados = todosLosHorarios.filter(c => String(c.semestre || c.Semestre) === filtroActual);
             }
+            
+            console.log('Filtrando semestre:', filtroActual, 'Horarios encontrados:', filtrados.length);
             
             if (filtrados.length === 0) {
                 grid.innerHTML = '<div class="vacio">📭 No hay horarios para este semestre</div>';
@@ -285,7 +315,7 @@
                 
                 console.log('Datos completos:', data);
                 
-                // LEER CONFIGURACIÓN (nuevo formato)
+                // LEER CONFIGURACIÓN
                 let b35 = '';
                 let b36 = '';
                 
@@ -298,19 +328,32 @@
                 console.log('B36 leído:', b36);
                 
                 // Procesar B35 - semestres permitidos
+                semestresPermitidos = []; // Reiniciar
+                
                 if (b35 && b35.toString().trim() !== '') {
-                    let valores = b35.toString().split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 6);
-                    if (valores.length > 0) {
-                        semestresPermitidos = valores;
-                        console.log('Semestres permitidos:', semestresPermitidos);
+                    let b35Str = b35.toString().trim();
+                    
+                    // Si tiene comas, separar
+                    if (b35Str.includes(',')) {
+                        let valores = b35Str.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 6);
+                        if (valores.length > 0) {
+                            semestresPermitidos = valores;
+                        }
                     } else {
-                        // Si no se pudo parsear, intentar como número único
-                        let unico = parseInt(b35);
+                        // Si es un solo número
+                        let unico = parseInt(b35Str);
                         if (!isNaN(unico) && unico >= 1 && unico <= 6) {
                             semestresPermitidos = [unico];
                         }
                     }
                 }
+                
+                // Si no se encontró nada, mostrar todos
+                if (semestresPermitidos.length === 0) {
+                    semestresPermitidos = [1, 2, 3, 4, 5, 6];
+                }
+                
+                console.log('Semestres permitidos FINAL:', semestresPermitidos);
                 
                 // Procesar B36 - título
                 if (b36 && b36.toString().trim() !== '') {
@@ -319,28 +362,8 @@
                     document.getElementById('periodo-actual').textContent = '📆 Semestres: ' + semestresPermitidos.join(', ');
                 }
                 
-                // OCULTAR BOTONES según B35
-                for (let i = 1; i <= 6; i++) {
-                    const btn = document.getElementById('filtro-' + i);
-                    if (btn) {
-                        if (semestresPermitidos.includes(i)) {
-                            btn.classList.remove('oculto');
-                        } else {
-                            btn.classList.add('oculto');
-                        }
-                    }
-                }
-                
-                // Seleccionar primer semestre permitido
-                if (semestresPermitidos.length > 0) {
-                    filtroActual = String(semestresPermitidos[0]);
-                    document.querySelectorAll('.btn-filtro').forEach(btn => {
-                        btn.classList.remove('activo');
-                        if (btn.getAttribute('data-semestre') === filtroActual) {
-                            btn.classList.add('activo');
-                        }
-                    });
-                }
+                // OCULTAR BOTONES (función clave)
+                ocultarBotones();
                 
                 // Cargar horarios
                 if (data.horarios && Array.isArray(data.horarios)) {
