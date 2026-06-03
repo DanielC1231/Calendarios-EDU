@@ -250,6 +250,7 @@
     
     <footer>
         <p>2026 Horario JPII - Proyecto Educativo</p>
+        <p style="font-size:12px; margin-top:5px;">📌 Configuración: Celda B35 = semestres a mostrar (ej: 1,3,5) | Celda B36 = título del periodo</p>
     </footer>
     
     <div class="sync-status" id="sync">Esperando...</div>
@@ -261,103 +262,77 @@
     </div>
 
     <script>
+        // IMPORTANTE: Reemplazar con la URL de tu Apps Script
         const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
         const STORAGE_KEY = 'horarios_cache';
         
         let todosLosHorarios = [];
-        let filtroActual = null;  // Se seteará según B35
+        let filtroActual = null;
         let yaRenderizado = false;
         let gridElement = null;
-        let semestresPermitidos = [1, 2, 3, 4, 5, 6]; // por defecto todos
+        let semestresPermitidos = [1, 2, 3, 4, 5, 6];
         let tituloPeriodo = "Periodo Académico";
         
         // ========== LEER B35 Y B36 DEL EXCEL ==========
-        async function leerConfiguracionExcel() {
+        async function leerConfiguracionExcel(data) {
             try {
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                const data = await response.json();
-                
                 let valorB35 = null;
                 let valorB36 = null;
                 
-                // Buscar en los datos del Excel
+                // Buscar en los datos la configuración de fila 35 y 36
                 if (Array.isArray(data)) {
-                    // Método 1: Buscar por índice de fila (si los datos tienen campo fila/row)
                     for (let i = 0; i < data.length; i++) {
-                        const fila = data[i];
+                        const item = data[i];
                         // Buscar fila 35
-                        if (fila.fila === 35 || fila.row === 35 || fila.Fila === 35 || fila.Row === 35) {
-                            valorB35 = fila.B || fila.valor || fila.columna2 || fila.Columna2;
+                        if (item.fila === 35) {
+                            valorB35 = item.valor || item.B || item.semestres_visibles;
+                            console.log('B35 encontrado:', valorB35);
                         }
                         // Buscar fila 36
-                        if (fila.fila === 36 || fila.row === 36 || fila.Fila === 36 || fila.Row === 36) {
-                            valorB36 = fila.B || fila.valor || fila.columna2 || fila.Columna2;
+                        if (item.fila === 36) {
+                            valorB36 = item.valor || item.B || item.titulo_periodo;
+                            console.log('B36 encontrado:', valorB36);
                         }
-                    }
-                    
-                    // Método 2: Si no encontró, intentar acceso directo por índice (fila 35 = índice 34, fila 36 = índice 35)
-                    if (valorB35 === null && data[34]) {
-                        valorB35 = data[34].B || data[34].valor || data[34].columna2;
-                    }
-                    if (valorB36 === null && data[35]) {
-                        valorB36 = data[35].B || data[35].valor || data[35].columna2;
                     }
                 }
                 
-                // Procesar B35 - semestres permitidos (ejemplo: "1,3,5" o "2,4,6" o "1" o "todos")
-                if (valorB35 !== null && valorB35 !== undefined) {
+                // Procesar B35 - semestres permitidos
+                if (valorB35 !== null && valorB35 !== undefined && String(valorB35).trim() !== '') {
                     let valorStr = String(valorB35).trim().toLowerCase();
                     
                     if (valorStr === 'todos') {
                         semestresPermitidos = [1, 2, 3, 4, 5, 6];
                     } else {
-                        // Dividir por comas y convertir a números
                         let numeros = valorStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 6);
                         if (numeros.length > 0) {
                             semestresPermitidos = numeros;
-                        } else {
-                            semestresPermitidos = [1, 2, 3, 4, 5, 6];
                         }
                     }
-                } else {
-                    semestresPermitidos = [1, 2, 3, 4, 5, 6];
                 }
                 
-                // Procesar B36 - título del periodo
+                // Procesar B36 - título
                 if (valorB36 !== null && valorB36 !== undefined && String(valorB36).trim() !== '') {
                     tituloPeriodo = String(valorB36).trim();
                 } else {
-                    // Si no hay título, generar uno automático según los semestres permitidos
+                    // Generar título automático
                     if (semestresPermitidos.length === 6) {
-                        tituloPeriodo = "Todos los Semestres";
-                    } else if (semestresPermitidos.length === 3 && semestresPermitidos[0] === 1 && semestresPermitidos[2] === 5) {
-                        tituloPeriodo = "📆 Periodo: Agosto - Diciembre (Semestres 1, 3, 5)";
-                    } else if (semestresPermitidos.length === 3 && semestresPermitidos[0] === 2 && semestresPermitidos[2] === 6) {
-                        tituloPeriodo = "📆 Periodo: Enero - Julio (Semestres 2, 4, 6)";
+                        tituloPeriodo = "📆 Todos los Semestres";
                     } else {
                         tituloPeriodo = "📆 Semestres: " + semestresPermitidos.join(", ");
                     }
                 }
                 
-                // Mostrar el título en el header
                 document.getElementById('periodo-actual').textContent = tituloPeriodo;
-                
                 return true;
                 
             } catch (error) {
-                console.error('Error leyendo Excel:', error);
-                semestresPermitidos = [1, 2, 3, 4, 5, 6];
-                tituloPeriodo = "Periodo Académico";
-                document.getElementById('periodo-actual').textContent = tituloPeriodo;
+                console.error('Error leyendo configuración:', error);
                 return false;
             }
         }
         
-        // ========== APLICAR OCULTAR/MOSTRAR SEGÚN B35 ==========
+        // ========== APLICAR FILTROS SEGÚN B35 ==========
         function aplicarFiltrosPorExcel() {
-            // Ocultar o mostrar botones según semestres permitidos
             for (let i = 1; i <= 6; i++) {
                 const btn = document.getElementById('filtro-' + i);
                 if (btn) {
@@ -369,22 +344,8 @@
                 }
             }
             
-            // Si el filtro actual no está permitido, cambiar al primero permitido o null
-            if (filtroActual !== null && filtroActual !== 'todos') {
-                const numActual = parseInt(filtroActual);
-                if (!semestresPermitidos.includes(numActual)) {
-                    if (semestresPermitidos.length > 0) {
-                        filtroActual = String(semestresPermitidos[0]);
-                        // Activar el botón correspondiente
-                        document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('activo'));
-                        const btnActivo = document.getElementById('filtro-' + filtroActual);
-                        if (btnActivo) btnActivo.classList.add('activo');
-                    } else {
-                        filtroActual = null;
-                    }
-                }
-            } else if (filtroActual === null && semestresPermitidos.length > 0) {
-                // Seleccionar el primer semestre permitido por defecto
+            // Seleccionar primer semestre permitido si no hay filtro
+            if (filtroActual === null && semestresPermitidos.length > 0) {
                 filtroActual = String(semestresPermitidos[0]);
                 document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('activo'));
                 const btnActivo = document.getElementById('filtro-' + filtroActual);
@@ -481,23 +442,26 @@
                 const syncDiv = document.getElementById('sync');
                 syncDiv.textContent = 'Actualizando...';
                 
-                // Primero leer la configuración del Excel (B35 y B36)
-                await leerConfiguracionExcel();
-                
-                const response = await fetch(API_URL);
+                const response = await fetch(API_URL + '?t=' + Date.now());
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const data = await response.json();
+                
                 if (!Array.isArray(data)) throw new Error('La API no devolvió un array');
                 
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                // Leer configuración de B35 y B36
+                await leerConfiguracionExcel(data);
+                
+                // Filtrar solo los horarios (excluir filas de configuración)
+                const horariosData = data.filter(item => item.fila !== 35 && item.fila !== 36 && !item.configuracion);
+                
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(horariosData));
                 
                 const datosActualesStr = JSON.stringify(todosLosHorarios);
-                const nuevosDatosStr = JSON.stringify(data);
+                const nuevosDatosStr = JSON.stringify(horariosData);
                 
                 if (datosActualesStr !== nuevosDatosStr) {
-                    todosLosHorarios = data;
-                    // Aplicar filtros de semestres según B35
+                    todosLosHorarios = horariosData;
                     aplicarFiltrosPorExcel();
                     renderizar();
                     yaRenderizado = true;
@@ -520,7 +484,6 @@
                     if (cache) {
                         try {
                             todosLosHorarios = JSON.parse(cache);
-                            aplicarFiltrosPorExcel();
                             renderizar();
                             yaRenderizado = true;
                             document.getElementById('sync').textContent = '✓ Usando caché local';
@@ -547,7 +510,6 @@
         function initFiltros() {
             document.querySelectorAll('.btn-filtro').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    // No permitir clic en botones ocultos
                     if (this.classList.contains('oculto')) return;
                     
                     filtroActual = this.getAttribute('data-semestre');
@@ -561,10 +523,6 @@
         // ========== INICIALIZACIÓN ==========
         async function init() {
             gridElement = document.querySelector('.horarios-grid');
-            
-            // Primero leer configuración del Excel (B35 y B36)
-            await leerConfiguracionExcel();
-            aplicarFiltrosPorExcel();
             
             const cache = localStorage.getItem(STORAGE_KEY);
             if (cache) {
