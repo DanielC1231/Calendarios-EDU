@@ -41,6 +41,47 @@ En el Google Sheets, solo necesita modificar **dos celdas**:
 - Google Apps Script (API para leer datos)
 - Service Workers (Funcionamiento offline)
 
+📊 Estructura del Google Sheets
+
+**Orden de las columnas (obligatorio):**
+
+| A | B | C | D | E |
+|---|---|---|---|---|
+| **semestre** | **grupo** | **titulo** | **fecha** | **imagen** |
+
+**Ejemplo de datos:**
+
+| semestre | grupo | titulo | fecha | imagen |
+|----------|-------|--------|-------|--------|
+| 1 | 1° A | Horario 1er Semestre Grupo A | 2026-08-15 | https://danielc1231.github.io/Calendarios-EDU/imagenes/calendario1a.jpg |
+| 2 | 2° B | Horario 2do Semestre Grupo B | 2026-09-10 | https://danielc1231.github.io/Calendarios-EDU/imagenes/calendario2b.jpg |
+| 3 | 3° C | Horario 3er Semestre Grupo C | 2026-10-01 | https://danielc1231.github.io/Calendarios-EDU/imagenes/calendario3c.jpg |
+| 4 | 4° D | Horario 4to Semestre Grupo D | 2026-11-15 | https://danielc1231.github.io/Calendarios-EDU/imagenes/calendario4d.jpg |
+| 5 | 5° E | Horario 5to Semestre Grupo E | 2026-12-01 | https://danielc1231.github.io/Calendarios-EDU/imagenes/calendario5e.jpg |
+| 6 | 6° F | Horario 6to Semestre Grupo F | 2026-12-15 | https://danielc1231.github.io/Calendarios-EDU/imagenes/calendario6f.jpg |
+
+**Además, en las celdas B35 y B36 se coloca la configuración:**
+
+| Celda | Contenido | Ejemplo |
+|-------|-----------|---------|
+| **B35** | Semestres a mostrar | `1,3,5` o `2,4,6` o `1` |
+| **B36** | Título del periodo | `Agosto - Diciembre 2026` |
+
+🖼️ Cómo subir imágenes a GitHub Pages
+
+Las imágenes deben subirse a la carpeta `imagenes` del repositorio:
+
+1. Ve a tu repositorio `https://github.com/danielc1231/Calendarios-EDU`
+2. Crea una carpeta llamada `imagenes` (si no existe)
+3. Sube allí las imágenes de los calendarios
+4. La URL será: `https://danielc1231.github.io/Calendarios-EDU/imagenes/NOMBRE_DEL_ARCHIVO`
+
+**Ejemplo de nombres de archivo sugeridos:**
+- `calendario1.jpg` (para 1er semestre)
+- `calendario2.jpg` (para 2do semestre)
+- `calendario3.jpg` (para 3er semestre)
+- etc.
+
 📲 Instalación
 
 **En Android (Chrome):**
@@ -62,17 +103,6 @@ En el Google Sheets, solo necesita modificar **dos celdas**:
 🔗 Enlace
 
 [https://danielc1231.github.io/Horario-EDU/](https://danielc1231.github.io/Horario-EDU/)
-
-📊 Estructura del Google Sheets
-
-| Columna A | Columna B | Columna C | Columna D | Columna E |
-|-----------|-----------|-----------|-----------|-----------|
-| **semestre** | **titulo** | **grupo** | **fecha** | **imagen** |
-| 1 | Horario 1° A | 1° Semestre A | 2026-08-15 | https://danielc1231.github.io/Calendarios-EDU/imagenes/calendario6c.jpg |
-| 2 | Horario 2° B | 2° Semestre B | 2026-09-10 | https://danielc1231.github.io/Calendarios-EDU/imagenes/calendario6c.jpg |
-| 3 | Horario 3° C | 3° Semestre C | 2026-10-01 | https://danielc1231.github.io/Horario-EDU/imagenes/calendario6d.jpg |
-
-**Además, en las celdas B35 y B36 se coloca la configuración.**
 
 ---
 
