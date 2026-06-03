@@ -179,12 +179,12 @@
     </header>
     
     <div class="filtros" id="contenedor-filtros">
-        <button class="btn-filtro" data-semestre="1">1er Semestre</button>
-        <button class="btn-filtro" data-semestre="2">2do Semestre</button>
-        <button class="btn-filtro" data-semestre="3">3er Semestre</button>
-        <button class="btn-filtro" data-semestre="4">4to Semestre</button>
-        <button class="btn-filtro" data-semestre="5">5to Semestre</button>
-        <button class="btn-filtro" data-semestre="6">6to Semestre</button>
+        <button class="btn-filtro" id="filtro-1" data-semestre="1">1er Semestre</button>
+        <button class="btn-filtro" id="filtro-2" data-semestre="2">2do Semestre</button>
+        <button class="btn-filtro" id="filtro-3" data-semestre="3">3er Semestre</button>
+        <button class="btn-filtro" id="filtro-4" data-semestre="4">4to Semestre</button>
+        <button class="btn-filtro" id="filtro-5" data-semestre="5">5to Semestre</button>
+        <button class="btn-filtro" id="filtro-6" data-semestre="6">6to Semestre</button>
     </div>
     
     <main id="container">
@@ -192,7 +192,7 @@
     </main>
     
     <footer>
-        <p>📌 <strong>Instrucciones:</strong> En la celda <strong>B35</strong> escribe los semestres (ej: 2,4,6 o solo 1). En <strong>B36</strong> escribe el título.</p>
+        <p>📌 <strong>Instrucciones:</strong> En la celda <strong>B35</strong> escribe los semestres (ej: 2,4,6 o solo 5). En <strong>B36</strong> escribe el título.</p>
     </footer>
     
     <div class="sync-status" id="sync">Esperando...</div>
@@ -204,7 +204,7 @@
 
     <script>
         // IMPORTANTE: Reemplazar con la URL de tu Apps Script
-        const API_URL = 'https://script.google.com/macros/s/AKfycbw_7AhPlGwDgpYdk5VVvOy9DUa_41r1PDQDGPGDOkz8ONPRqnxMA7KHYaf-KzA1a0XBSg/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
         
         let todosLosHorarios = [];
         let filtroActual = '1';
@@ -243,14 +243,17 @@
                 if (btn) {
                     if (semestresPermitidos.includes(i)) {
                         btn.classList.remove('oculto');
-                        console.log('Mostrando semestre', i);
+                        console.log('✅ Mostrando semestre', i);
                     } else {
                         btn.classList.add('oculto');
-                        console.log('Ocultando semestre', i);
+                        console.log('❌ Ocultando semestre', i);
                     }
+                } else {
+                    console.log('⚠️ No encontré el botón filtro-' + i);
                 }
             }
             
+            // Seleccionar el primer semestre permitido
             if (semestresPermitidos.length > 0) {
                 filtroActual = String(semestresPermitidos[0]);
                 document.querySelectorAll('.btn-filtro').forEach(btn => {
@@ -270,6 +273,8 @@
             if (filtroActual !== 'todos') {
                 filtrados = todosLosHorarios.filter(c => String(c.semestre || c.Semestre) === filtroActual);
             }
+            
+            console.log('Filtrando semestre:', filtroActual, 'Horarios encontrados:', filtrados.length);
             
             if (filtrados.length === 0) {
                 grid.innerHTML = '<div class="vacio">📭 No hay horarios para este semestre</div>';
@@ -312,7 +317,7 @@
                 
                 console.log('Datos completos:', data);
                 
-                // BUSCAR LA CONFIGURACIÓN (el elemento con _tipo = "config")
+                // BUSCAR LA CONFIGURACIÓN
                 let b35 = '';
                 let b36 = '';
                 
@@ -325,12 +330,6 @@
                             break;
                         }
                     }
-                }
-                
-                // Si no encontró con _tipo, intentar buscar por si está suelto
-                if (b35 === '' && data.config) {
-                    b35 = data.config.b35 || '';
-                    b36 = data.config.b36 || '';
                 }
                 
                 console.log('B35 final:', b35);
@@ -368,9 +367,10 @@
                     document.getElementById('periodo-actual').textContent = '📆 Semestres: ' + semestresPermitidos.join(', ');
                 }
                 
+                // OCULTAR BOTONES
                 ocultarBotones();
                 
-                // Cargar horarios (excluir el elemento de configuración)
+                // Cargar horarios
                 if (Array.isArray(data)) {
                     todosLosHorarios = data.filter(item => item._tipo !== 'config');
                 } else if (data.horarios) {
