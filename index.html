@@ -192,7 +192,7 @@
     </main>
     
     <footer>
-        <p>📌 <strong>Instrucciones:</strong> En la celda <strong>B35</strong> escribe los semestres (ej: 2,4,6 o solo 5). En <strong>B36</strong> escribe el título.</p>
+        <p>📌 <strong>Instrucciones:</strong> En la celda <strong>B35</strong> escribe los semestres (ej: 1 o 2,4,6). En <strong>B36</strong> escribe el título.</p>
     </footer>
     
     <div class="sync-status" id="sync">Esperando...</div>
@@ -203,7 +203,7 @@
     </div>
 
     <script>
-        // IMPORTANTE: Reemplazar con la URL de tu Apps Script
+        // IMPORTANTE: Reemplazar con la URL de tu Apps Script DESPUÉS DE ACTUALIZARLO
         const API_URL = 'https://script.google.com/macros/s/AKfycbw1I6ajLn7Yk1MeCiRXVf8wY4tzrijKJN9XrLSX8JnvHf-DclBbpJnB-4Di3fcsMo4V9Q/exec';
         
         let todosLosHorarios = [];
@@ -248,8 +248,6 @@
                         btn.classList.add('oculto');
                         console.log('❌ Ocultando semestre', i);
                     }
-                } else {
-                    console.log('⚠️ No encontré el botón filtro-' + i);
                 }
             }
             
@@ -273,8 +271,6 @@
             if (filtroActual !== 'todos') {
                 filtrados = todosLosHorarios.filter(c => String(c.semestre || c.Semestre) === filtroActual);
             }
-            
-            console.log('Filtrando semestre:', filtroActual, 'Horarios encontrados:', filtrados.length);
             
             if (filtrados.length === 0) {
                 grid.innerHTML = '<div class="vacio">📭 No hay horarios para este semestre</div>';
@@ -315,31 +311,21 @@
                 const response = await fetch(API_URL + '?t=' + Date.now());
                 const data = await response.json();
                 
-                console.log('Datos completos:', data);
+                console.log('Respuesta completa:', data);
                 
-                // BUSCAR LA CONFIGURACIÓN
-                let b35 = '';
-                let b36 = '';
+                // LEER CONFIGURACIÓN (nuevo formato simple)
+                let b35 = data.configB35 || '';
+                let b36 = data.configB36 || '';
                 
-                if (Array.isArray(data)) {
-                    for (let item of data) {
-                        if (item._tipo === 'config') {
-                            b35 = item.B35 || '';
-                            b36 = item.B36 || '';
-                            console.log('Config encontrada - B35:', b35, 'B36:', b36);
-                            break;
-                        }
-                    }
-                }
-                
-                console.log('B35 final:', b35);
-                console.log('B36 final:', b36);
+                console.log('B35 leído:', `"${b35}"`);
+                console.log('B36 leído:', `"${b36}"`);
                 
                 // Procesar B35
                 semestresPermitidos = [];
                 
                 if (b35 && b35.toString().trim() !== '') {
                     let b35Str = b35.toString().trim();
+                    console.log('Procesando B35 string:', b35Str);
                     
                     if (b35Str.includes(',')) {
                         let valores = b35Str.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 6);
@@ -354,8 +340,10 @@
                     }
                 }
                 
+                // Si B35 está vacío o no se pudo procesar, mostrar todos
                 if (semestresPermitidos.length === 0) {
                     semestresPermitidos = [1, 2, 3, 4, 5, 6];
+                    console.log('B35 vacío o inválido, mostrando todos los semestres');
                 }
                 
                 console.log('Semestres permitidos FINAL:', semestresPermitidos);
@@ -371,14 +359,15 @@
                 ocultarBotones();
                 
                 // Cargar horarios
-                if (Array.isArray(data)) {
-                    todosLosHorarios = data.filter(item => item._tipo !== 'config');
-                } else if (data.horarios) {
+                if (data.horarios && Array.isArray(data.horarios)) {
                     todosLosHorarios = data.horarios;
+                } else if (Array.isArray(data)) {
+                    todosLosHorarios = data;
                 } else {
                     todosLosHorarios = [];
                 }
                 
+                console.log('Total horarios cargados:', todosLosHorarios.length);
                 renderizar();
                 syncDiv.textContent = `✓ Actualizado ${new Date().toLocaleTimeString()}`;
                 
